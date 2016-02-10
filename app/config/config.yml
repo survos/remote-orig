@@ -67,16 +67,3 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     spool:     { type: memory }
-
-llsaws:
-    config_auto_discovery: false
-    identities:
-        lls_sqs_user:
-            type:   user
-            fields:
-                key:    %aws_key%
-                secret: %aws_secret%
-    services:
-        lls_sqs:
-            type: sqs
-            identity: lls_sqs_user
