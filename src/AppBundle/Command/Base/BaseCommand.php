@@ -2,6 +2,7 @@
 
 namespace AppBundle\Command\Base;
 
+use Aws\Sqs\SqsClient;
 use Survos\Client\SurvosClient;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
@@ -21,6 +22,9 @@ class BaseCommand extends ContainerAwareCommand
      */
     protected $sourceClient;
 
+    /* @type SqsClient */
+    private $sqs;
+
     protected function configure()
     {
         parent::configure();
@@ -32,7 +36,7 @@ class BaseCommand extends ContainerAwareCommand
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-
+        $this->sqs = $this->getContainer()->get('aws.sqs');
         $this->parameters = $this->getContainer()->getParameter('survos');
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');

@@ -31,7 +31,7 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
     }
 
     /**
-     * @param \Symfony\Component\Console\Input\InputInterface $input
+     * @param \Symfony\Component\Console\Input\InputInterface   $input
      * @param \Symfony\Component\Console\Output\OutputInterface $output
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -39,7 +39,7 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
         $this->services = [];
 
         $isVerbose = $output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
-        $projectCode = $input->getOption('project-code');
+//        $projectCode = $input->getOption('project-code');
 
         /** @type AssignmentResource $assignmentResource */
         $assignmentResource = new AssignmentResource($this->sourceClient);
