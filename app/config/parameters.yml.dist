@@ -18,6 +18,7 @@ parameters:
     # A secret key that's used to generate certain security-related tokens
     secret:            ThisTokenIsNotSoSecretChangeIt
 
+    aws_account_id: 'account'
     aws_key: 'key'
     aws_secret: 'secret'
     survos:

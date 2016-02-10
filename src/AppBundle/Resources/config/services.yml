@@ -18,3 +18,9 @@ services:
                 credentials: "@aws.credentials"
                 region: us-east-1
                 version: '2012-11-05'
+
+    survos.sqs:
+        class: AppBundle\Services\SqsService
+        arguments:
+            - %aws_account_id%
+            - "@aws.sqs"

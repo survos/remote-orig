@@ -2,7 +2,7 @@
 
 namespace AppBundle\Command\Base;
 
-use Aws\Sqs\SqsClient;
+use AppBundle\Services\SqsService;
 use Survos\Client\SurvosClient;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
@@ -22,8 +22,8 @@ class BaseCommand extends ContainerAwareCommand
      */
     protected $sourceClient;
 
-    /* @type SqsClient */
-    private $sqs;
+    /* @type SqsService */
+    protected $sqs;
 
     protected function configure()
     {
@@ -36,7 +36,7 @@ class BaseCommand extends ContainerAwareCommand
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $this->sqs = $this->getContainer()->get('aws.sqs');
+        $this->sqs = $this->getContainer()->get('survos.sqs');
         $this->parameters = $this->getContainer()->getParameter('survos');
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');
@@ -54,7 +54,6 @@ class BaseCommand extends ContainerAwareCommand
             $output->writeln(
                 "<error>Wrong credentials for target endpoint: {$this->parameters['target']['endpoint']}</error>"
             );
-            // die();
         }
 
         // configure source client (optional)

@@ -3,11 +3,10 @@
 namespace AppBundle\Command;
 
 use AppBundle\Command\Base\BaseCommand;
+use Aws\Result;
 use Survos\Client\Resource\AssignmentResource;
+use Survos\Client\Resource\TaskResource;
 use Survos\Client\Resource\WaveResource;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -39,67 +38,35 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->services = [];
+        $this->assignmentResource = new AssignmentResource($this->sourceClient);
 
         $isVerbose = $output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
         $projectCode = $input->getOption('project-code');
 
-        /** @type AssignmentResource $assignmentResource */
-        $assignmentResource = new AssignmentResource($this->sourceClient);
         $waveResource = new WaveResource($this->sourceClient);
 
         // get list of external waves
-        $waves = $waveResource->getList(null,null,null,null,null,['project_code'=>$projectCode]);
+        $waves = $waveResource->getList(null, null, null, null, null, ['project_code' => $projectCode]);
 
-        // iterate and query each sqs queue to get messages
+        foreach ($waves['items'] as $wave) {
+            $queueName = $wave['external_queue_name'];
+            /** @type Result $messages */
+            $messages = $this->sqs->receiveMessages($queueName);
+            // iterate and query each sqs queue to get messages
+            foreach ($messages->toArray() as $message) {
+                $message = $message[0];
+                $data = json_decode($message['Body'], true);
+                //query messages to get assignments for processing
+                $assignment = $this->assignmentResource->getOneBy(['id' => $data['assignment']['Id']]);
+                $this->processAssignment($assignment);
+            }
+            //
+        }
 
-        //query messages to get assignments for processing
 
         die();
-        $assignment = $assignmentResource->getOneBy(['id'=>$id]);
 
-        $tasksIds = array_map(
-            function ($item) {
-                return $item['task_id'];
-            },
-            $assignments['items']
-        );
-        $taskResource = new TaskResource($this->sourceClient);
-        $tasks = $taskResource->getList(null, null, ['id' => array_unique($tasksIds)], ['id' => SurvosCriteria::IN]);
-        $surveyByTask = [];
-        foreach ($tasks['items'] as $task) {
-            $surveyByTask[$task['id']] = isset($task['survey_json']) ? json_decode($task['survey_json'], true) : null;
-        }
-        foreach ($assignments['items'] as $key => $assignment) {
-            $taskId = $assignment['task_id'];
-            $survey = $surveyByTask[$taskId];
-            // $answers = [];
-            foreach ($survey['questions'] as $question) {
-                if ($isVerbose) {
-                    $output->writeln("Checking question \'{$question['text']}\' ");
-                }
-                switch ($question['code']) {
-                    case 'temp':
-                        $weatherData = $this->getWeatherData();
-                        // needs persisting to responses
-                        $answers[$question['code']] = $weatherData['main']['temp'];
-                        break;
-                    case 'wind_speed':
-                        $weatherData = $this->getWeatherData();
-                        $answers[$question['code']] = $weatherData['wind']['speed'];
-                        break;
-                    default:
-                        throw new Exception("Unhandled field '{$question['code']}' in survey");
-                }
 
-            }
-            if (!empty($answers)) {
-                $assignment['flat_data'] = array_merge(
-                    $assignment['flat_data'] ?: [],
-                    $answers
-                );
-                $assignmentResource->save($assignment);
-            }
-        }
     }
 
     function saveAssignment($client, $data)
@@ -127,6 +94,53 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
         }
 
         return $this->services['weather'];
+
+    }
+
+    private function processAssignment($assignment)
+    {
+
+        /** @type AssignmentResource $assignmentResource */
+        $assignmentResource = $this->assignmentResource;
+
+        $tasksId = $assignment['task_id'];
+
+        /** @type TaskResource $taskResource */
+        $taskResource = new TaskResource($this->sourceClient);
+        $task = $taskResource->getOneBy(['id' => $tasksId]);
+
+
+        $taskId = $assignment['task_id'];
+        $survey = isset($task['survey_json']) ? json_decode($task['survey_json'], true) : null;
+
+        // $answers = [];
+        foreach ($survey['questions'] as $question) {
+//            if ($isVerbose) {
+//                $output->writeln("Checking question \'{$question['text']}\' ");
+//            }
+            switch ($question['code']) {
+                case 'temp':
+                    $weatherData = $this->getWeatherData();
+                    // needs persisting to responses
+                    $answers[$question['code']] = $weatherData['main']['temp'];
+                    break;
+                case 'wind_speed':
+                    $weatherData = $this->getWeatherData();
+                    $answers[$question['code']] = $weatherData['wind']['speed'];
+                    break;
+                default:
+                    throw new \Exception("Unhandled field '{$question['code']}' in survey");
+            }
+
+        }
+        if (!empty($answers)) {
+            $assignment['flat_data'] = array_merge(
+                $assignment['flat_data'] ?: [],
+                $answers
+            );
+            $assignmentResource->save($assignment);
+        }
+
 
     }
 
