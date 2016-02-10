@@ -21,6 +21,15 @@ class BaseCommand extends ContainerAwareCommand
      */
     protected $sourceClient;
 
+    protected function configure()
+    {
+        parent::configure();
+        $this
+            ->setName('demo:base')
+            ->setDescription('Base, should always be overwritten.  Should probably be declared differently')
+        ;
+    }
+
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $yaml = new Parser();
