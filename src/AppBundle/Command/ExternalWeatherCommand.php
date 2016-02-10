@@ -3,6 +3,8 @@
 namespace AppBundle\Command;
 
 use AppBundle\Command\Base\BaseCommand;
+use Survos\Client\Resource\AssignmentResource;
+use Survos\Client\Resource\WaveResource;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
@@ -23,10 +25,10 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
             ->setDescription('Process a queue dedicated to weather')
             ->setHelp("Reads from an SQS queue, looks up the weather, then pushes back to one")
             ->addOption(
-                'queue',
+                'project-code',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'SQS Queue Name'
+                'Project code'
             );
     }
 
@@ -39,32 +41,22 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
         $this->services = [];
 
         $isVerbose = $output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
-//        $projectCode = $input->getOption('project-code');
+        $projectCode = $input->getOption('project-code');
 
         /** @type AssignmentResource $assignmentResource */
         $assignmentResource = new AssignmentResource($this->sourceClient);
+        $waveResource = new WaveResource($this->sourceClient);
 
-        $page = 0;
-        $perPage = 10;
-        $maxPages = 1;
-        $criteria = [];
-        $data = [];
-        // need much better filter!  Maybe the survey or wave needs to associate itself with an external service?
-        $assignments = $assignmentResource->getList(
-            1,
-            1,
-            [
-                'survey_response_status_code' => 'initiated',
-            ],
-            null,
-            null,
-            ['project_code' => 'behattest']
-        );
+        // get list of external waves
+        $waves = $waveResource->getList(null,null,null,null,null,['project_code'=>$projectCode]);
 
-        // if no items, return
-        if (!count($assignments['items']) || !$assignments['total']) {
-            return;
-        }
+        // iterate and query each sqs queue to get messages
+
+        //query messages to get assignments for processing
+
+        die();
+        $assignment = $assignmentResource->getOneBy(['id'=>$id]);
+
         $tasksIds = array_map(
             function ($item) {
                 return $item['task_id'];

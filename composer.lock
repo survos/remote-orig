@@ -1596,12 +1596,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/survos/platform-api-php.git",
-                "reference": "c239dc26ada94178716e9650089b8f7e274a22d6"
+                "reference": "2618c9b8bcd964aea9be8c549046c11f10758d1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/c239dc26ada94178716e9650089b8f7e274a22d6",
-                "reference": "c239dc26ada94178716e9650089b8f7e274a22d6",
+                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/2618c9b8bcd964aea9be8c549046c11f10758d1a",
+                "reference": "2618c9b8bcd964aea9be8c549046c11f10758d1a",
                 "shasum": ""
             },
             "require": {
@@ -1618,7 +1618,7 @@
                 "proprietary"
             ],
             "description": "Survos php api client",
-            "time": "2016-02-01 14:29:04"
+            "time": "2016-02-10 13:59:14"
         },
         {
             "name": "swiftmailer/swiftmailer",
