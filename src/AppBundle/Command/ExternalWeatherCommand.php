@@ -49,12 +49,15 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
         $waves = $waveResource->getList(null, null, null, null, null, ['project_code' => $projectCode]);
 
         foreach ($waves['items'] as $wave) {
+            if (!isset($wave['external_queue_name'])) {
+                // queue name not set - ignore
+                continue;
+            }
             $queueName = $wave['external_queue_name'];
             /** @type Result $messages */
-            $messages = $this->sqs->receiveMessages($queueName);
+            $messages = $this->sqs->receiveMessages($queueName)->toArray();
             // iterate and query each sqs queue to get messages
-            foreach ($messages->toArray() as $message) {
-                $message = $message[0];
+            foreach ($messages['Messages'] as $message) {
                 $data = json_decode($message['Body'], true);
                 //query messages to get assignments for processing
                 $assignment = $this->assignmentResource->getOneBy(['id' => $data['assignment']['Id']]);
@@ -128,8 +131,8 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
                     $weatherData = $this->getWeatherData();
                     $answers[$question['code']] = $weatherData['wind']['speed'];
                     break;
-                default:
-                    throw new \Exception("Unhandled field '{$question['code']}' in survey");
+//                default:
+//                    throw new \Exception("Unhandled field '{$question['code']}' in survey");
             }
 
         }
