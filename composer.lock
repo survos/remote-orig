@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "4add1a6757211ad8bd5a1ee6369ab857",
-    "content-hash": "add23eed8f8e7dac7afa9929bdd4d71a",
+    "hash": "3406efa88d8a5175b08505d69e6edca2",
+    "content-hash": "86df781fbbeaed28c49d03cfe23916e1",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1126,6 +1126,53 @@
             "time": "2014-01-12 16:20:24"
         },
         {
+            "name": "jwage/easy-csv",
+            "version": "0.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jwage/easy-csv.git",
+                "reference": "5ba994c332e3dec0e26e1d39789beaf8e2552a1e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jwage/easy-csv/zipball/5ba994c332e3dec0e26e1d39789beaf8e2552a1e",
+                "reference": "5ba994c332e3dec0e26e1d39789beaf8e2552a1e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "EasyCSV": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jonathan H. Wage",
+                    "email": "jonwage@gmail.com"
+                }
+            ],
+            "description": "Easy CSV manipulation for PHP 5.4+",
+            "homepage": "http://github.com/jwage/easy-csv",
+            "keywords": [
+                "csv",
+                "read",
+                "write"
+            ],
+            "time": "2015-07-16 20:24:42"
+        },
+        {
             "name": "monolog/monolog",
             "version": "1.17.2",
             "source": {
@@ -1542,6 +1589,36 @@
             ],
             "description": "A security checker for your composer.lock",
             "time": "2015-11-07 08:07:40"
+        },
+        {
+            "name": "survos/platform-api-php",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/survos/platform-api-php.git",
+                "reference": "c239dc26ada94178716e9650089b8f7e274a22d6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/c239dc26ada94178716e9650089b8f7e274a22d6",
+                "reference": "c239dc26ada94178716e9650089b8f7e274a22d6",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "~6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Survos\\Client\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "proprietary"
+            ],
+            "description": "Survos php api client",
+            "time": "2016-02-01 14:29:04"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -2296,7 +2373,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "aws/aws-sdk-php": 20
+        "aws/aws-sdk-php": 20,
+        "survos/platform-api-php": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

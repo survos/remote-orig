@@ -27,7 +27,9 @@
     "sensio/distribution-bundle": "^5.0",
     "sensio/framework-extra-bundle": "^3.0.2",
     "incenteev/composer-parameter-handler": "^2.0",
-    "aws/aws-sdk-php": "^3.0@dev"
+    "aws/aws-sdk-php": "^3.0@dev",
+    "survos/platform-api-php": "dev-master",
+    "jwage/easy-csv": "^0.0.3"
   },
   "require-dev": {
     "sensio/generator-bundle": "^3.0",

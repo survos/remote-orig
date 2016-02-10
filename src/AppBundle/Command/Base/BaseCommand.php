@@ -6,7 +6,6 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Yaml\Parser;
 
 
 class BaseCommand extends ContainerAwareCommand
@@ -32,14 +31,8 @@ class BaseCommand extends ContainerAwareCommand
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $yaml = new Parser();
 
-        if (!file_exists('config.yml')) {
-            $output->writeln('<error>Config file could not be found. Please run "composer install"</error>');
-            die();
-        }
-        $params = $yaml->parse(file_get_contents('config.yml'));
-        $this->parameters = $params['parameters'];
+        $this->parameters = $this->getContainer()->getParameter('survos');
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');
             die();

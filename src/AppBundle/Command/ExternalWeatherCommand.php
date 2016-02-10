@@ -2,7 +2,7 @@
 
 namespace AppBundle\Command;
 
-use Command\Base\BaseCommand;
+use AppBundle\Command\Base\BaseCommand;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
-class ExternalWeatherCommand extends ContainerAwareCommand // BaseCommand
+class ExternalWeatherCommand extends BaseCommand // BaseCommand
 {
     private $services;
 
@@ -27,12 +27,11 @@ class ExternalWeatherCommand extends ContainerAwareCommand // BaseCommand
                 null,
                 InputOption::VALUE_REQUIRED,
                 'SQS Queue Name'
-            )
-        ;
+            );
     }
 
     /**
-     * @param \Symfony\Component\Console\Input\InputInterface   $input
+     * @param \Symfony\Component\Console\Input\InputInterface $input
      * @param \Symfony\Component\Console\Output\OutputInterface $output
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -102,7 +101,7 @@ class ExternalWeatherCommand extends ContainerAwareCommand // BaseCommand
 
             }
             if (!empty($answers)) {
-                $assignment['flat_data']  = array_merge(
+                $assignment['flat_data'] = array_merge(
                     $assignment['flat_data'] ?: [],
                     $answers
                 );
@@ -126,7 +125,12 @@ class ExternalWeatherCommand extends ContainerAwareCommand // BaseCommand
             $serviceData = $this->services['weather'];
         } else {
 
-            $serviceData = json_decode(file_get_contents("http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=0dde8683a8619233195ca7917465b29d"), true);
+            $serviceData = json_decode(
+                file_get_contents(
+                    "http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=0dde8683a8619233195ca7917465b29d"
+                ),
+                true
+            );
             $this->services['weather'] = $serviceData;
         }
 
