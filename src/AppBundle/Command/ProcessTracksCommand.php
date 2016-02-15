@@ -29,6 +29,13 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
                 null,
                 InputOption::VALUE_REQUIRED,
                 'SQS Queue Url'
+            )
+            ->addOption(
+                'limit',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'SQS Queue Url',
+                3
             );
     }
 
@@ -41,17 +48,21 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
         $this->services = [];
 
         $queueUrl = $input->getOption('queue-url');
+        $limit = $input->getOption('limit');
 
+        $options = [
+            'MaxNumberOfMessages' => $limit,
+        ];
 
         /** @type Result $messages */
-        $messages = $this->sqs->receiveMessages($queueUrl)->toArray();
-
+        $messages = $this->sqs->receiveMessages($queueUrl, $options)->toArray();
+var_dump($messages);
         // iterate and query each sqs queue to get messages
         foreach ($messages['Messages'] as $message) {
             $data = json_decode($message['Body'], true);
+            var_dump($data);
             // process track
         }
-
 
         die();
 
