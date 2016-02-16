@@ -3,11 +3,8 @@
 namespace AppBundle\Command;
 
 use AppBundle\Command\Base\BaseCommand;
+use AppBundle\Command\Base\SqsFeaturesTrait;
 use Aws\Result;
-use Survos\Client\Resource\AssignmentResource;
-use Survos\Client\Resource\ProjectResource;
-use Survos\Client\Resource\TaskResource;
-use Survos\Client\Resource\WaveResource;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,6 +12,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ProcessTracksCommand extends BaseCommand // BaseCommand
 {
+    // add sqs parameters - we can use only one trait at once for now
+    use SqsFeaturesTrait;
+
     private $services;
 
     protected function configure()
@@ -25,19 +25,14 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
             ->setDescription('Process a queue dedicated to tracks')
             ->setHelp("Reads from an SQS queue")
             ->addOption(
-                'queue-url',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'SQS Queue Url'
-            )
-            ->addOption(
                 'limit',
                 null,
-                InputOption::VALUE_REQUIRED,
-                'SQS Queue Url',
+                InputOption::VALUE_OPTIONAL,
+                'Limit messages read from the queue in one go',
                 3
             );
     }
+
 
     /**
      * @param \Symfony\Component\Console\Input\InputInterface   $input
@@ -48,6 +43,7 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
         $this->services = [];
 
         $queueUrl = $input->getOption('queue-url');
+
         $limit = $input->getOption('limit');
 
         $options = [
@@ -56,12 +52,13 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
 
         /** @type Result $messages */
         $messages = $this->sqs->receiveMessages($queueUrl, $options)->toArray();
-var_dump($messages);
         // iterate and query each sqs queue to get messages
-        foreach ($messages['Messages'] as $message) {
-            $data = json_decode($message['Body'], true);
-            var_dump($data);
-            // process track
+        if (isset($messages['Messages'])) {
+            foreach ($messages['Messages'] as $message) {
+                $data = json_decode($message['Body'], true);
+                var_dump($data);
+                // process track
+            }
         }
 
         die();

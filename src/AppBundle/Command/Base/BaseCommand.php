@@ -24,23 +24,48 @@ class BaseCommand extends ContainerAwareCommand
 
     /* @type SqsService */
     protected $sqs;
+    protected $awsKey;
+    protected $awsSecret;
+    protected $awsAccountId;
 
     protected function configure()
     {
         parent::configure();
         $this
             ->setName('demo:base')
-            ->setDescription('Base, should always be overwritten.  Should probably be declared differently')
-        ;
+            ->setDescription('Base, should always be overwritten.  Should probably be declared differently');
+        $this->configureCommand();
+    }
+
+    // override to use in eg traits
+    public function configureCommand()
+    {
+
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $this->sqs = $this->getContainer()->get('survos.sqs');
         $this->parameters = $this->getContainer()->getParameter('survos');
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');
             die();
+        }
+
+        // get sqs service - set up with credentials from cli if passed
+        $this->sqs = $this->getContainer()->get('survos.sqs');
+
+        if ($input->hasOption('aws-key') && $input->hasOption('aws-key')
+            && $input->hasOption('aws-key') && $input->getOption('aws-key')
+            && $input->getOption('aws-key') && $input->getOption('aws-key')
+        ) {
+            $this->awsKey = $input->getOption('aws-key');
+            $this->awsSecret = $input->getOption('aws-secret');
+            $this->awsAccountId = $input->getOption('aws-account-id');
+            $this->sqs = $this->sqs->getForCredentials(
+                $input->getOption('aws-account-id'),
+                $input->getOption('aws-key'),
+                $input->getOption('aws-secret')
+            );
         }
 
         // configure target client
