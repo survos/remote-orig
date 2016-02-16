@@ -51,6 +51,7 @@ class BaseCommand extends ContainerAwareCommand
             die();
         }
 
+        if ($input->hasOption('queue-name')) {
         // get sqs service - set up with credentials from cli if passed
         $this->sqs = $this->getContainer()->get('survos.sqs');
 
@@ -66,6 +67,7 @@ class BaseCommand extends ContainerAwareCommand
                 $input->getOption('aws-key'),
                 $input->getOption('aws-secret')
             );
+        }
         }
 
         // configure target client

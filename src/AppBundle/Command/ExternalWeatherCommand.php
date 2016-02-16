@@ -3,6 +3,7 @@
 namespace AppBundle\Command;
 
 use AppBundle\Command\Base\BaseCommand;
+use AppBundle\Command\Base\SqsFeaturesTrait;
 use Aws\Result;
 use Survos\Client\Resource\AssignmentResource;
 use Survos\Client\Resource\TaskResource;
@@ -12,8 +13,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
-class ExternalWeatherCommand extends BaseCommand // BaseCommand
+class ExternalWeatherCommand extends BaseCommand
 {
+    use SqsFeaturesTrait;
     private $services;
 
     protected function configure()
@@ -40,36 +42,22 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
         $this->services = [];
         $this->assignmentResource = new AssignmentResource($this->sourceClient);
 
-        $isVerbose = $output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
-        $projectCode = $input->getOption('project-code');
 
-        $waveResource = new WaveResource($this->sourceClient);
-
-        // get list of external waves
-        $waves = $waveResource->getList(null, null, null, null, null, ['project_code' => $projectCode]);
-
-        foreach ($waves['items'] as $wave) {
-            if (!isset($wave['external_queue_name'])) {
-                // queue name not set - ignore
+        $queueName = $input->getOption('queue-name');
+        /** @type Result $messages */
+        $messages = $this->sqs->receiveMessages($queueName)->toArray();
+        // iterate and query each sqs queue to get messages
+        foreach ($messages['Messages'] as $message) {
+            $data = json_decode($message['Body'], true);           //query messages to get assignments for processing
+            if (!isset($data['assignment'])) {
+                $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
                 continue;
             }
-            $queueName = $wave['external_queue_name'];
-            /** @type Result $messages */
-            $messages = $this->sqs->receiveMessages($queueName)->toArray();
-            // iterate and query each sqs queue to get messages
-            foreach ($messages['Messages'] as $message) {
-                $data = json_decode($message['Body'], true);
-                //query messages to get assignments for processing
-                $assignment = $this->assignmentResource->getOneBy(['id' => $data['assignment']['Id']]);
-                $this->processAssignment($assignment);
-            }
-            //
+            $assignment = $this->assignmentResource->getOneBy(['id' => $data['assignment']['Id']]);
+
+            $this->processAssignment($assignment, $data);
+            $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
         }
-
-
-        die();
-
-
     }
 
     function saveAssignment($client, $data)
@@ -81,7 +69,7 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
     /**
      * get weather data - store locally to not fetch in case
      */
-    private function getWeatherData()
+    private function getWeatherData($lat, $lon)
     {
         if (isset($this->services['weather'])) {
             $serviceData = $this->services['weather'];
@@ -89,7 +77,7 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
 
             $serviceData = json_decode(
                 file_get_contents(
-                    "http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=0dde8683a8619233195ca7917465b29d"
+                    "http://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&appid=0dde8683a8619233195ca7917465b29d"
                 ),
                 true
             );
@@ -100,35 +88,33 @@ class ExternalWeatherCommand extends BaseCommand // BaseCommand
 
     }
 
-    private function processAssignment($assignment)
+    private function processAssignment($assignment, $data)
     {
 
         /** @type AssignmentResource $assignmentResource */
         $assignmentResource = $this->assignmentResource;
 
-        $tasksId = $assignment['task_id'];
-
-        /** @type TaskResource $taskResource */
-        $taskResource = new TaskResource($this->sourceClient);
-        $task = $taskResource->getOneBy(['id' => $tasksId]);
-
-
-        $taskId = $assignment['task_id'];
-        $survey = isset($task['survey_json']) ? json_decode($task['survey_json'], true) : null;
-
+        $lat = isset($assignment['latitude']) ? floatval($assignment['latitude']) : false;
+        $lon = isset($assignment['longitude']) ? floatval($assignment['longitude']) : false;
+        if (!$lat || !$lon) {
+            return;
+        }
         // $answers = [];
-        foreach ($survey['questions'] as $question) {
+        foreach ($data['questions'] as $question) {
+            if (!isset($question['code'])) {
+                continue;
+            }
 //            if ($isVerbose) {
 //                $output->writeln("Checking question \'{$question['text']}\' ");
 //            }
             switch ($question['code']) {
                 case 'temp':
-                    $weatherData = $this->getWeatherData();
+                    $weatherData = $this->getWeatherData($lat, $lon);
                     // needs persisting to responses
                     $answers[$question['code']] = $weatherData['main']['temp'];
                     break;
                 case 'wind_speed':
-                    $weatherData = $this->getWeatherData();
+                    $weatherData = $this->getWeatherData($lat, $lon);
                     $answers[$question['code']] = $weatherData['wind']['speed'];
                     break;
 //                default:

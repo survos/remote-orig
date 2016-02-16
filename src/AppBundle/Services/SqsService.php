@@ -177,6 +177,27 @@ class SqsService
     }
 
     /**
+     * that message immediately
+     *
+     * @param string $queueName
+     */
+    public function removeMessage($queueName, $receiptHandle)
+    {
+        if (preg_match('{^https?:}', $queueName)) {
+            $queueUrl = $queueName;
+        } else {
+            $queueUrl = $this->getQueueUrl($queueName);
+        }
+
+        $this->getAwsSqs()->deleteMessage(
+            [
+                'QueueUrl'      => $queueUrl,
+                'ReceiptHandle' => $receiptHandle,
+            ]
+        );
+    }
+
+    /**
      * @param string $queueName
      * @param object|array $messageData
      * @return array

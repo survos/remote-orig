@@ -58,11 +58,9 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
                 $data = json_decode($message['Body'], true);
                 var_dump($data);
                 // process track
+
             }
         }
-
-        die();
-
 
     }
 
