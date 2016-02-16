@@ -46,6 +46,10 @@ class ExternalWeatherCommand extends BaseCommand
         $queueName = $input->getOption('queue-name');
         /** @type Result $messages */
         $messages = $this->sqs->receiveMessages($queueName)->toArray();
+        if (!isset($messages['Messages'])) {
+            $output->writeln('No messages in queue');
+            exit();
+        }
         // iterate and query each sqs queue to get messages
         foreach ($messages['Messages'] as $message) {
             $data = json_decode($message['Body'], true);           //query messages to get assignments for processing
