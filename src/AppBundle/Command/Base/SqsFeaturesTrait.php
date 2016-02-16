@@ -16,7 +16,7 @@ trait SqsFeaturesTrait
     public function configureCommand()
     {
         $this->addOption(
-            'queue-url',
+            'queue-name',
             null,
             InputOption::VALUE_REQUIRED,
             'SQS Queue Name'

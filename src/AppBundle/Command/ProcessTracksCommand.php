@@ -42,7 +42,7 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
     {
         $this->services = [];
 
-        $queueUrl = $input->getOption('queue-url');
+        $queueUrl = $input->getOption('queue-name');
 
         $limit = $input->getOption('limit');
 
