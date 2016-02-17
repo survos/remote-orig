@@ -32,7 +32,6 @@ class SqsService
         self::$instances[$awsAccountId] = $this;
     }
 
-
     /**
      * a bit hacky
      *
@@ -290,5 +289,67 @@ class SqsService
             print $e->getMessage();
             die("\nCurl Exception.  Dying so it can be restarted.\n");
         }
+    }
+
+    /**
+     * @return string
+     */
+    public function getArnPrefix()
+    {
+        return 'arn:aws:sqs:' . $this->awsSqs->getRegion() . ':' . $this->awsAccountId  . ':';
+    }
+
+    /**
+     * @param string $queueName
+     * @return \Aws\Result
+     */
+    public function setTurkQueuePermissions($queueName) {
+        $queueUrl = $this->getQueueUrl($queueName);
+        $queueName = preg_replace('{^.*/}', '', $queueName); // in case it's really a URL
+        // Adapted from http://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_NotificationReceptorAPI_SQSTransportArticle.html#ApiReference_NotificationReceptorAPI_SQSTransportArticle-policy-document
+        $policy = [
+            'Version' => '2008-10-17',
+            'Id' => $this->getArnPrefix() . $queueName . '/MTurkOnlyPolicy',
+            'Statement' => [
+                [
+                    'Sid' => 'MTurkOnlyPolicy',
+                    'Effect' => 'Allow',
+                    'Principal' => [
+                        'AWS' => 'arn:aws:iam::755651556756:user/MTurk-SQS'
+                    ],
+                    'Action' => 'SQS:SendMessage',
+                    'Resource' => $this->getArnPrefix() . $queueName,
+                ]
+            ]
+        ];
+        return $this->awsSqs->setQueueAttributes([
+            'QueueUrl' => $queueUrl,
+            'Attributes' => [
+                'Policy' => json_encode($policy),
+            ],
+        ]);
+    }
+
+    /**
+     * @param string $queueName
+     * @return string
+     */
+    public function addDeadLetterQueue($queueName)
+    {
+        $maxReceiveCount = 6;
+        $queueName = preg_replace('{^.*/}', '', $queueName); // in case it's really a URL
+        $deadQueueName = $queueName . '-dead';
+        $deadQueueUrl = $this->createQueue($deadQueueName);
+        $redrivePolicy = [
+            'maxReceiveCount' => $maxReceiveCount,
+            'deadLetterTargetArn' => $this->getArnPrefix() . $deadQueueName,
+        ];
+        $this->awsSqs->setQueueAttributes([
+            'QueueUrl' => $this->getQueueUrl($queueName),
+            'Attributes' => [
+                'RedrivePolicy' => json_encode($redrivePolicy),
+            ],
+        ]);
+        return $deadQueueUrl;
     }
 }
