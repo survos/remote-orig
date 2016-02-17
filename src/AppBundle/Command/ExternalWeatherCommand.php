@@ -40,8 +40,6 @@ class ExternalWeatherCommand extends BaseCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->services = [];
-        $this->assignmentResource = new AssignmentResource($this->sourceClient);
-
 
         $queueName = $input->getOption('queue-name');
         /** @type Result $messages */
@@ -57,18 +55,12 @@ class ExternalWeatherCommand extends BaseCommand
                 $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
                 continue;
             }
-            $assignment = $this->assignmentResource->getOneBy(['id' => $data['assignment']['Id']]);
 
-            $this->processAssignment($assignment, $data);
+            $this->processAssignment($data['assignment'], $data);
             $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
         }
     }
 
-    function saveAssignment($client, $data)
-    {
-        $resource = new \Survos\Client\Resource\AssignmentResource($client);
-        $response = $resource->save($data);
-    }
 
     /**
      * get weather data - store locally to not fetch in case
@@ -95,11 +87,9 @@ class ExternalWeatherCommand extends BaseCommand
     private function processAssignment($assignment, $data)
     {
 
-        /** @type AssignmentResource $assignmentResource */
-        $assignmentResource = $this->assignmentResource;
 
-        $lat = isset($assignment['latitude']) ? floatval($assignment['latitude']) : false;
-        $lon = isset($assignment['longitude']) ? floatval($assignment['longitude']) : false;
+        $lat = isset($assignment['Latitude']) ? floatval($assignment['Latitude']) : false;
+        $lon = isset($assignment['Longitude']) ? floatval($assignment['Longitude']) : false;
         if (!$lat || !$lon) {
             return;
         }
@@ -127,6 +117,10 @@ class ExternalWeatherCommand extends BaseCommand
 
         }
         if (!empty($answers)) {
+            /** @type AssignmentResource $assignmentResource */
+            $assignmentResource = new AssignmentResource($this->sourceClient);
+
+            $assignment = $assignmentResource->getOneBy(['id' => $assignment['Id']]);
             $assignment['flat_data'] = array_merge(
                 $assignment['flat_data'] ?: [],
                 $answers
