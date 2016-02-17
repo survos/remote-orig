@@ -173,6 +173,18 @@ class SqsService
 
     /**
      * @param string $queueName
+     * @param array $options
+     * @return string queue URL
+     */
+    public function createQueue($queueName, $options = [])
+    {
+        $options['QueueName'] = $queueName;
+        $result = $this->awsSqs->createQueue($options);
+        return $result->get('QueueUrl');
+    }
+
+    /**
+     * @param string $queueName
      * @param object|array $messageData
      * @return array
      */
