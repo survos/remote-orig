@@ -57,9 +57,25 @@ class ExternalWeatherCommand extends BaseCommand
                 $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
                 continue;
             }
+            $assignment = $data['assignment'];
 
-            $this->processAssignment($data['assignment'], $data);
-            $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
+            $answers = $this->processAssignment($assignment, $data);
+
+            if (!empty($answers)) {
+                /** @type AssignmentResource $assignmentResource */
+                $assignmentResource = new AssignmentResource($this->sourceClient);
+
+                // this part could be replaced by queue
+                $a = $assignmentResource->getOneBy(['id' => $assignment['Id']]);
+                $a['flat_data'] = array_merge(
+                    $assignment['flat_data'] ?: [],
+                    $answers
+                );
+                $assignmentResource->save($a);
+                $output->writeln("Deleting " . $data['assignment']['Id']);
+                // $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
+            }
+
         }
     }
 
@@ -91,6 +107,7 @@ class ExternalWeatherCommand extends BaseCommand
         $lat = isset($assignment['Latitude']) ? floatval($assignment['Latitude']) : false;
         $lon = isset($assignment['Longitude']) ? floatval($assignment['Longitude']) : false;
         if (!$lat || !$lon) {
+            // throw new \Exception("No lat/long");
             return;
         }
         // $answers = [];
@@ -102,31 +119,20 @@ class ExternalWeatherCommand extends BaseCommand
 //            if ($isVerbose) {
 //                $output->writeln("Checking question \'{$question['text']}\' ");
 //            }
-            switch ($question['code']) {
-                case 'temp':
+            switch ($code = $question['code']) {
+                case 'temperature':
                     // needs persisting to responses
-                    $answers[$question['code']] = $weatherData['main']['temp'];
+                    $answers[$code] = $weatherData['main']['temp'];
                     break;
                 case 'wind_speed':
-                    $answers[$question['code']] = $weatherData['wind']['speed'];
+                    $answers[$code] = $weatherData['wind']['speed'];
                     break;
-//                default:
-//                    throw new \Exception("Unhandled field '{$question['code']}' in survey");
+                default:
+                    throw new \Exception("Unhandled field $code in survey");
             }
-            dump($answers); die();
-
         }
-        if (!empty($answers)) {
-            /** @type AssignmentResource $assignmentResource */
-            $assignmentResource = new AssignmentResource($this->sourceClient);
 
-            $assignment = $assignmentResource->getOneBy(['id' => $assignment['Id']]);
-            $assignment['flat_data'] = array_merge(
-                $assignment['flat_data'] ?: [],
-                $answers
-            );
-            $assignmentResource->save($assignment);
-        }
+        return $answers;
 
 
     }
