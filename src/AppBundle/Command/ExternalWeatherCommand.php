@@ -8,6 +8,7 @@ use Aws\Result;
 use Survos\Client\Resource\AssignmentResource;
 use Survos\Client\Resource\TaskResource;
 use Survos\Client\Resource\WaveResource;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,58 +26,68 @@ class ExternalWeatherCommand extends BaseCommand
             ->setName('demo:weather')
             ->setDescription('Process a queue dedicated to weather')
             ->setHelp("Reads from an SQS queue, looks up the weather, then pushes back to one")
-            ->addOption(
-                'project-code',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Project code'
+            ->addArgument(
+                'from-queue',
+                InputArgument::REQUIRED,
+                'From queue name'
+            )
+            ->addArgument(
+                'to-queue',
+                InputArgument::REQUIRED,
+                'To queue name'
             );
     }
 
     /**
-     * @param \Symfony\Component\Console\Input\InputInterface   $input
-     * @param \Symfony\Component\Console\Output\OutputInterface $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @throws \Exception
+     * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->services = [];
-
-        $queueName = $input->getOption('queue-name');
+        $fromQueueName = $input->getArgument('from-queue');
+        $toQueueName = $input->getArgument('to-queue');
         /** @type Result $messages */
-        $messages = $this->sqs->receiveMessages($queueName)->toArray();
+        $messages = $this->sqs->receiveMessages($fromQueueName);
         if (!isset($messages['Messages'])) {
             $output->writeln('No messages in queue');
             exit();
         }
         // iterate and query each sqs queue to get messages
         foreach ($messages['Messages'] as $message) {
-            $data = json_decode($message['Body'], true);           //query messages to get assignments for processing
+            $data = json_decode($message['Body'], true);
             if (!isset($data['assignment'])) {
                 dump($data);
                 throw new \Exception("Missing assignment in JSON data");
-                $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
+                $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
                 continue;
             }
             $assignment = $data['assignment'];
 
             $answers = $this->processAssignment($assignment, $data);
 
-            if (!empty($answers)) {
-                /** @type AssignmentResource $assignmentResource */
-                $assignmentResource = new AssignmentResource($this->sourceClient);
-
-                // this part could be replaced by queue
-                $a = $assignmentResource->getOneBy(['id' => $assignment['Id']]);
-                $a['flat_data'] = array_merge(
-                    $assignment['flat_data'] ?: [],
-                    $answers
-                );
-                $assignmentResource->save($a);
-                $output->writeln("Deleting " . $data['assignment']['Id']);
-                // $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
+            if ($answers) {
+                $id = $assignment['Id'];
+                if ($output->isVerbose()) {
+                    $output->writeln("Updating $id");
+                    dump($answers);
+                }
+                $commandMessage = [
+                    'command' => 'appendAnswers',
+                    'arguments' => [
+                        'assignmentId' => $id,
+                        'answers' => $answers,
+                    ]
+                ];
+                $this->sqs->queue($toQueueName, $commandMessage);
+                $output->writeln("Deleting $id");
+                // $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
             }
 
         }
+        return 0; // OK
     }
 
 
@@ -102,51 +113,36 @@ class ExternalWeatherCommand extends BaseCommand
 
     }
 
-    private function processAssignment($assignment, $data)
-    {
-        $lat = isset($assignment['Latitude']) ? floatval($assignment['Latitude']) : false;
-        $lon = isset($assignment['Longitude']) ? floatval($assignment['Longitude']) : false;
-        if (!$lat || !$lon) {
-            // throw new \Exception("No lat/long");
-            return;
-        }
-        // $answers = [];
-        foreach ($data['questions'] as $question) {
-            if (!isset($question['code'])) {
-                continue;
-            }
-            $weatherData = $this->getWeatherData($lat, $lon);
-//            if ($isVerbose) {
-//                $output->writeln("Checking question \'{$question['text']}\' ");
-//            }
-            switch ($code = $question['code']) {
-                case 'temperature':
-                    // needs persisting to responses
-                    $answers[$code] = $weatherData['main']['temp'];
-                    break;
-                case 'wind_speed':
-                    $answers[$code] = $weatherData['wind']['speed'];
-                    break;
-                default:
-                    throw new \Exception("Unhandled field $code in survey");
-            }
-        }
-
-        return $answers;
-
-
-    }
-
-
     /**
-     * @param $member
+     * @param array $assignment
+     * @param array $data
      * @return array
      */
-    private function getMemberCriteria()
+    private function processAssignment($assignment, $data)
     {
-        return [
-            'enrollment_status_code' => 'applicant',
-        ];
+        $answers = [];
+        $lat = isset($assignment['Latitude']) ? floatval($assignment['Latitude']) : false;
+        $lon = isset($assignment['Longitude']) ? floatval($assignment['Longitude']) : false;
+        if ($lat and $lon) {
+            foreach ($data['questions'] as $question) {
+                if (!isset($question['code'])) {
+                    continue;
+                }
+                $weatherData = $this->getWeatherData($lat, $lon);
+                switch ($code = $question['code']) {
+                    case 'temp':
+                    case 'temperature':
+                        // needs persisting to responses
+                        $answers[$code] = $weatherData['main']['temp'];
+                        break;
+                    case 'wind_speed':
+                        $answers[$code] = $weatherData['wind']['speed'];
+                        break;
+                    default:
+                        //throw new \Exception("Unhandled field $code in survey");
+                }
+            }
+        }
+        return $answers;
     }
-
 }
