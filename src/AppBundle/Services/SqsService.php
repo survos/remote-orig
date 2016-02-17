@@ -110,15 +110,9 @@ class SqsService
      */
     public function getQueueAttributes($queueName)
     {
-        if (preg_match('{^https?:}', $queueName)) {
-            $queueUrl = $queueName;
-        } else {
-            $queueUrl = $this->getQueueUrl($queueName);
-        }
-
         return $this->awsSqs->getQueueAttributes(
             [
-                'QueueUrl'       => $queueUrl,
+                'QueueUrl'       => $this->getQueueUrl($queueName),
                 'AttributeNames' => ['ApproximateNumberOfMessages'],
             ]
         );
@@ -132,17 +126,9 @@ class SqsService
      */
     public function purgeQueue($queueName)
     {
-        if (preg_match('{^https?:}', $queueName)) {
-            $queueUrl = $queueName;
-        } else {
-            $queueUrl = $this->getQueueUrl($queueName);
-        }
-
-        /** @var Model $sqsResponse */
-
         return $this->awsSqs->purgeQueue(
             [
-                'QueueUrl' => $queueUrl,
+                'QueueUrl' => $this->getQueueUrl($queueName),
             ]
         );
     }
@@ -155,12 +141,6 @@ class SqsService
      */
     public function removeAllMessages($queueName)
     {
-        if (preg_match('{^https?:}', $queueName)) {
-            $queueUrl = $queueName;
-        } else {
-            $queueUrl = $this->getQueueUrl($queueName);
-        }
-
         $messages = $this->receiveMessages($queueName)->toArray();
         if (!isset($messages['Messages']) || !is_array($messages['Messages'])) {
             return;
@@ -169,7 +149,7 @@ class SqsService
         foreach ($messages['Messages'] as $message) {
             $this->getAwsSqs()->deleteMessage(
                 [
-                    'QueueUrl'      => $queueUrl,
+                    'QueueUrl'      => $this->getQueueUrl($queueName),
                     'ReceiptHandle' => $message['ReceiptHandle'],
                 ]
             );
@@ -183,15 +163,9 @@ class SqsService
      */
     public function removeMessage($queueName, $receiptHandle)
     {
-        if (preg_match('{^https?:}', $queueName)) {
-            $queueUrl = $queueName;
-        } else {
-            $queueUrl = $this->getQueueUrl($queueName);
-        }
-
         $this->getAwsSqs()->deleteMessage(
             [
-                'QueueUrl'      => $queueUrl,
+                'QueueUrl'      => $this->getQueueUrl($queueName),
                 'ReceiptHandle' => $receiptHandle,
             ]
         );
@@ -204,15 +178,9 @@ class SqsService
      */
     public function queue($queueName, $messageData)
     {
-        if (preg_match('{^https?:}', $queueName)) {
-            $queueUrl = $queueName;
-        } else {
-            $queueUrl = $this->getQueueUrl($queueName);
-        }
-        /** @var Model $sqsResponse */
         $sqsResponse = $this->awsSqs->sendMessage(
             [
-                'QueueUrl'    => $queueUrl,
+                'QueueUrl'    => $this->getQueueUrl($queueName),
                 'MessageBody' => json_encode($messageData),
             ]
         );
@@ -283,7 +251,8 @@ class SqsService
     public function getQueueUrl($queueName)
     {
         // likely this should be part of the credentials / constructor
-        return sprintf('https://sqs.us-east-1.amazonaws.com/%s/%s', $this->awsAccountId, $queueName);
+        return preg_match('{^https?:}', $queueName) ? $queueName :
+            sprintf('https://sqs.us-east-1.amazonaws.com/%s/%s', $this->awsAccountId, $queueName);
     }
 
     /**
@@ -293,12 +262,6 @@ class SqsService
      */
     public function receiveMessages($queueName, array $options = [])
     {
-        if (preg_match('{^https?:}', $queueName)) {
-            $queueUrl = $queueName;
-        } else {
-            $queueUrl = $this->getQueueUrl($queueName);
-        }
-
         $resolver = new OptionsResolver();
         $resolver->setDefaults(
             [
@@ -308,7 +271,7 @@ class SqsService
             ]
         );
         $options = $resolver->resolve($options);
-        $options['QueueUrl'] = $queueUrl;
+        $options['QueueUrl'] = $this->getQueueUrl($queueName);
         try {
             return $this->awsSqs->receiveMessage($options);
         } catch (\Exception $e) { // TODO: should probably be CurlException!
