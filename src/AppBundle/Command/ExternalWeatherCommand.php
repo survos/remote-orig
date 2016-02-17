@@ -52,6 +52,8 @@ class ExternalWeatherCommand extends BaseCommand
         foreach ($messages['Messages'] as $message) {
             $data = json_decode($message['Body'], true);           //query messages to get assignments for processing
             if (!isset($data['assignment'])) {
+                dump($data);
+                throw new \Exception("Missing assignment in JSON data");
                 $this->sqs->removeMessage($queueName, $message['ReceiptHandle']);
                 continue;
             }
@@ -86,8 +88,6 @@ class ExternalWeatherCommand extends BaseCommand
 
     private function processAssignment($assignment, $data)
     {
-
-
         $lat = isset($assignment['Latitude']) ? floatval($assignment['Latitude']) : false;
         $lon = isset($assignment['Longitude']) ? floatval($assignment['Longitude']) : false;
         if (!$lat || !$lon) {
@@ -98,22 +98,22 @@ class ExternalWeatherCommand extends BaseCommand
             if (!isset($question['code'])) {
                 continue;
             }
+            $weatherData = $this->getWeatherData($lat, $lon);
 //            if ($isVerbose) {
 //                $output->writeln("Checking question \'{$question['text']}\' ");
 //            }
             switch ($question['code']) {
                 case 'temp':
-                    $weatherData = $this->getWeatherData($lat, $lon);
                     // needs persisting to responses
                     $answers[$question['code']] = $weatherData['main']['temp'];
                     break;
                 case 'wind_speed':
-                    $weatherData = $this->getWeatherData($lat, $lon);
                     $answers[$question['code']] = $weatherData['wind']['speed'];
                     break;
 //                default:
 //                    throw new \Exception("Unhandled field '{$question['code']}' in survey");
             }
+            dump($answers); die();
 
         }
         if (!empty($answers)) {
