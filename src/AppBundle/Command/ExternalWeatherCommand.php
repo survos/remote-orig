@@ -69,7 +69,7 @@ class ExternalWeatherCommand extends BaseCommand
             $answers = $this->processAssignment($assignment, $data);
 
             if ($answers) {
-                $id = $assignment['Id'];
+                $id = $assignment['id'];
                 if ($output->isVerbose()) {
                     $output->writeln("Updating $id");
                     dump($answers);
@@ -77,7 +77,7 @@ class ExternalWeatherCommand extends BaseCommand
                 $commandMessage = [
                     'command' => 'appendAnswers',
                     'arguments' => [
-                        'assignmentId' => $id,
+                        'assignment_id' => $id,
                         'answers' => $answers,
                     ]
                 ];
@@ -121,8 +121,8 @@ class ExternalWeatherCommand extends BaseCommand
     private function processAssignment($assignment, $data)
     {
         $answers = [];
-        $lat = isset($assignment['Latitude']) ? floatval($assignment['Latitude']) : false;
-        $lon = isset($assignment['Longitude']) ? floatval($assignment['Longitude']) : false;
+        $lat = isset($assignment['latitude']) ? floatval($assignment['latitude']) : false;
+        $lon = isset($assignment['longitude']) ? floatval($assignment['longitude']) : false;
         if ($lat and $lon) {
             foreach ($data['questions'] as $question) {
                 if (!isset($question['code'])) {
