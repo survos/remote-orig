@@ -33,8 +33,9 @@ class ExternalWeatherCommand extends BaseCommand
             )
             ->addArgument(
                 'to-queue',
-                InputArgument::REQUIRED,
-                'To queue name'
+                InputArgument::OPTIONAL,
+                'To queue name',
+                false
             );
     }
 
@@ -64,9 +65,15 @@ class ExternalWeatherCommand extends BaseCommand
                 $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
                 continue;
             }
+            if ($input->getOption('verbose')) {
+                dump($data);
+            }
             $assignment = $data['assignment'];
 
             $answers = $this->processAssignment($assignment, $data);
+            if ($input->getOption('verbose')) {
+                dump($answers);
+            }
 
             if ($answers) {
                 $id = $assignment['id'];
@@ -81,8 +88,13 @@ class ExternalWeatherCommand extends BaseCommand
                         'answers' => $answers,
                     ]
                 ];
-                $this->sqs->queue($toQueueName, $commandMessage);
-                $output->writeln("Deleting $id");
+                if ($toQueueName) {
+                    $this->sqs->queue($toQueueName, $commandMessage);
+                    $output->writeln("Deleting $id");
+                } else {
+                    dump($commandMessage);
+                    $output->writeln("No output queue specified");
+                }
                 // $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
             }
 
@@ -142,6 +154,9 @@ class ExternalWeatherCommand extends BaseCommand
                         //throw new \Exception("Unhandled field $code in survey");
                 }
             }
+        } else {
+            // we need to handle exceptions the right way!
+            // throw new
         }
         return $answers;
     }
