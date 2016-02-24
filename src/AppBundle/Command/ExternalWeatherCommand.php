@@ -4,6 +4,10 @@ namespace AppBundle\Command;
 
 use AppBundle\Command\Base\BaseCommand;
 use AppBundle\Command\Base\SqsFeaturesTrait;
+use AppBundle\Exception\AssignmentExceptionInterface;
+use AppBundle\Exception\AssignmentNotFound;
+use AppBundle\Exception\LatLonNotFound;
+use AppBundle\Exception\PosseExceptionInterface;
 use Aws\Result;
 use Survos\Client\Resource\AssignmentResource;
 use Survos\Client\Resource\TaskResource;
@@ -40,7 +44,7 @@ class ExternalWeatherCommand extends BaseCommand
     }
 
     /**
-     * @param InputInterface $input
+     * @param InputInterface  $input
      * @param OutputInterface $output
      * @throws \Exception
      * @return int
@@ -58,47 +62,62 @@ class ExternalWeatherCommand extends BaseCommand
         }
         // iterate and query each sqs queue to get messages
         foreach ($messages['Messages'] as $message) {
-            $data = json_decode($message['Body'], true);
-            if (!isset($data['assignment'])) {
-                dump($data);
-                throw new \Exception("Missing assignment in JSON data");
-                $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
-                continue;
-            }
-            if ($input->getOption('verbose')) {
-                dump($data);
-            }
-            $assignment = $data['assignment'];
+            try {
+                $data = json_decode($message['Body'], true);
+                if (!isset($data['assignment'])) {
+                    throw new AssignmentNotFound($data, "Missing assignment in JSON data");
+                }
+                if ($input->getOption('verbose')) {
+                    dump($data);
+                }
 
-            $answers = $this->processAssignment($assignment, $data);
-            if ($input->getOption('verbose')) {
-                dump($answers);
-            }
+                $assignment = $data['assignment'];
 
-            if ($answers) {
-                $id = $assignment['id'];
-                if ($output->isVerbose()) {
-                    $output->writeln("Updating $id");
+                $answers = $this->processAssignment($assignment, $data);
+                if ($input->getOption('verbose')) {
                     dump($answers);
                 }
-                $commandMessage = [
-                    'command' => 'appendAnswers',
-                    'arguments' => [
-                        'assignment_id' => $id,
-                        'answers' => $answers,
-                    ]
-                ];
-                if ($toQueueName) {
-                    $this->sqs->queue($toQueueName, $commandMessage);
-                    $output->writeln("Deleting $id");
-                } else {
-                    dump($commandMessage);
-                    $output->writeln("No output queue specified");
+
+                if ($answers) {
+                    $id = $assignment['id'];
+                    if ($output->isVerbose()) {
+                        $output->writeln("Updating $id");
+                        dump($answers);
+                    }
+                    $commandMessage = [
+                        'command'   => 'appendAnswers',
+                        'arguments' => [
+                            'assignment_id' => $id,
+                            'answers'       => $answers,
+                        ],
+                    ];
+                    if ($toQueueName) {
+                        $this->sqs->queue($toQueueName, $commandMessage);
+                        $output->writeln("Deleting $id");
+                    } else {
+                        dump($commandMessage);
+                        $output->writeln("No output queue specified");
+                    }
+                    // $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
                 }
-                // $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
+            } catch (\Exception $e) {
+                if ($e instanceof AssignmentExceptionInterface) {
+                    $output->writeln("Assignment #{$e->getAssignmentId()}. ".$e->getMessage()." data:".json_encode($e->getRelatedData()));
+                    // handled exception, remove from queue
+                    $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
+                } elseif ($e instanceof PosseExceptionInterface) {
+                    $output->writeln($e->getMessage()." data:".json_encode($e->getRelatedData()));
+                    // handled exception, remove from queue
+                    $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
+                } else {
+                    // needs sorting as it shouldn't happen
+                    $output->writeln($e->getMessage());
+                }
+
             }
 
         }
+
         return 0; // OK
     }
 
@@ -135,29 +154,31 @@ class ExternalWeatherCommand extends BaseCommand
         $answers = [];
         $lat = isset($assignment['latitude']) ? floatval($assignment['latitude']) : false;
         $lon = isset($assignment['longitude']) ? floatval($assignment['longitude']) : false;
-        if ($lat and $lon) {
-            foreach ($data['questions'] as $question) {
-                if (!isset($question['code'])) {
-                    continue;
-                }
-                $weatherData = $this->getWeatherData($lat, $lon);
-                switch ($code = $question['code']) {
-                    case 'temp':
-                    case 'temperature':
-                        // needs persisting to responses
-                        $answers[$code] = $weatherData['main']['temp'];
-                        break;
-                    case 'wind_speed':
-                        $answers[$code] = $weatherData['wind']['speed'];
-                        break;
-                    default:
-                        //throw new \Exception("Unhandled field $code in survey");
-                }
-            }
-        } else {
-            // we need to handle exceptions the right way!
-            // throw new
+
+        if (!$lat || !$lon) {
+            throw new LatLonNotFound($assignment['id'], $assignment, "Latitude or Longitude not found");
         }
+
+        foreach ($data['questions'] as $question) {
+            if (!isset($question['code'])) {
+                continue;
+            }
+            $weatherData = $this->getWeatherData($lat, $lon);
+            switch ($code = $question['code']) {
+                case 'temp':
+                case 'temperature':
+                    // needs persisting to responses
+                    $answers[$code] = $weatherData['main']['temp'];
+                    break;
+                case 'wind_speed':
+                    $answers[$code] = $weatherData['wind']['speed'];
+                    break;
+                default:
+                    //throw new \Exception("Unhandled field $code in survey");
+            }
+        }
+
+
         return $answers;
     }
 }
