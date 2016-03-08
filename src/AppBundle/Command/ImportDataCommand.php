@@ -66,9 +66,10 @@ class ImportDataCommand extends BaseCommand
         $project = $projectResource->getByCode($targetProject);
 
         $sourceCsv = $input->getOption('source-csv-file');
-        $data = str_getcsv(file_get_contents($sourceCsv), "\n"); //parse the rows
-        $columns = str_getcsv(array_shift($data), ',');
-        foreach ($data as &$row) {
+        $csvData = str_getcsv(file_get_contents($sourceCsv), "\n"); //parse the rows
+        $columns = str_getcsv(array_shift($csvData), ',');
+        $i = 0;
+        foreach ($csvData as &$row) {
             $dataResource = new DataResource($this->client);
             $dataArray = str_getcsv($row, ",");
             $dataArray = array_combine($columns, $dataArray);
@@ -81,15 +82,42 @@ class ImportDataCommand extends BaseCommand
                 'name'         => $dataArray['Name'],
                 'project'      => $project['@id'],
                 'dataTypeCode' => $dataType['@id'],
-                'questionCode' => $dataArray['QuestionCode'],
-                'height'       => $dataArray['Height'],
-                'width'        => $dataArray['Width'],
-                'orientation'  => $dataArray['Orientation'],
                 'isActive'     => $dataArray['IsActive'],
                 'createdAt'    => $dataArray['CreatedAt'],
             ];
 
-            $dataResource->addForImportWave($waveId, $data);
+            if ($dataArray['DataTypeCode'] == 'place') {
+                $data = array_merge(
+                    $data,
+                    [
+                        'latitude'  => $dataArray['Latitude'],
+                        'longitude' => $dataArray['Longitude'],
+                        'zip'       => $dataArray['Zip'],
+                        'address'   => $dataArray['Address'],
+                    ]
+                );
+            } elseif ($dataArray['DataTypeCode'] == 'image') {
+                $data = array_merge(
+                    $data,
+                    [
+                        'questionCode' => $dataArray['QuestionCode'],
+                        'height'       => intval($dataArray['Height']),
+                        'width'        => intval($dataArray['Width']),
+                        'orientation'  => intval($dataArray['Orientation']),
+                        'tag'          => $dataArray['Tag'],
+                    ]
+                );
+            }
+
+            try {
+                $dataResource->addForImportWave($waveId, $data);
+                $i++;
+            } catch (\Exception $e) {
+                $output->writeln('<err>'.$e->getMessage().'</err>');
+            }
+            if ($i > 10) {
+                break;
+            }
         };
 
 
