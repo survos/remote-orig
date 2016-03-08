@@ -98,11 +98,17 @@ class ExternalWeatherCommand extends BaseCommand
                         dump($commandMessage);
                         $output->writeln("No output queue specified");
                     }
-                    // $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
+
+                    //all good, remove from the queue
+                    $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
                 }
             } catch (\Exception $e) {
                 if ($e instanceof AssignmentExceptionInterface) {
-                    $output->writeln("Assignment #{$e->getAssignmentId()}. ".$e->getMessage()." data:".json_encode($e->getRelatedData()));
+                    $output->writeln(
+                        "Assignment #{$e->getAssignmentId()}. ".$e->getMessage()." data:".json_encode(
+                            $e->getRelatedData()
+                        )
+                    );
                     // handled exception, remove from queue
                     $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
                 } elseif ($e instanceof PosseExceptionInterface) {
@@ -112,6 +118,7 @@ class ExternalWeatherCommand extends BaseCommand
                 } else {
                     // needs sorting as it shouldn't happen
                     $output->writeln($e->getMessage());
+                    throw $e;
                 }
 
             }

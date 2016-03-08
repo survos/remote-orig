@@ -72,12 +72,20 @@ class BaseCommand extends ContainerAwareCommand
 
         // configure target client
         $this->client = new SurvosClient($this->parameters['target']['endpoint']);
+        $authResult = false;
 
-        if (!$this->client->authorize(
-            $this->parameters['target']['username'],
-            $this->parameters['target']['password']
-        )
-        ) {
+        if ($input->hasOption('access_token') && $input->getOption('access_token')) {
+            $authResult = $this->client->authorize($input->getOption('access_token'));
+        } else {
+            $authResult = $this->client->authorize(
+                $this->parameters['target']['username'],
+                $this->parameters['target']['password'],
+                $this->parameters['target']['client_id'],
+                $this->parameters['target']['client_secret']
+            );
+        }
+
+        if (!$authResult) {
             $output->writeln(
                 "<error>Wrong credentials for target endpoint: {$this->parameters['target']['endpoint']}</error>"
             );
@@ -91,7 +99,9 @@ class BaseCommand extends ContainerAwareCommand
 
             if (!$this->sourceClient->authorize(
                 $this->parameters['source']['username'],
-                $this->parameters['source']['password']
+                $this->parameters['source']['password'],
+                $this->parameters['source']['client_id'],
+                $this->parameters['source']['client_secret']
             )
             ) {
                 $output->writeln(
