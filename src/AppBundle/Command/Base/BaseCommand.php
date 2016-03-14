@@ -55,10 +55,7 @@ class BaseCommand extends ContainerAwareCommand
         // get sqs service - set up with credentials from cli if passed
         $this->sqs = $this->getContainer()->get('survos.sqs');
 
-        if ($input->hasOption('aws-key') && $input->hasOption('aws-key')
-            && $input->hasOption('aws-key') && $input->getOption('aws-key')
-            && $input->getOption('aws-key') && $input->getOption('aws-key')
-        ) {
+        if ($input->hasOption('aws-key') && $input->getOption('aws-key')) {
             $this->awsKey = $input->getOption('aws-key');
             $this->awsSecret = $input->getOption('aws-secret');
             $this->awsAccountId = $input->getOption('aws-account-id');
