@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "53ba57ad5ae96391e83a4dc37e543f51",
-    "content-hash": "0497fed6afdd35145806911517c27cf7",
+    "hash": "e0238d903ec0e9c53adc216ddf3a3f21",
+    "content-hash": "9c3aaa8791f262be7f59fc1234e30604",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1755,16 +1755,16 @@
         },
         {
             "name": "survos/platform-api-php",
-            "version": "dev-feature-newapi",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/survos/platform-api-php.git",
-                "reference": "e357998cea0d621794526b3950d9fe4ccb0e4fc7"
+                "reference": "2618c9b8bcd964aea9be8c549046c11f10758d1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/e357998cea0d621794526b3950d9fe4ccb0e4fc7",
-                "reference": "e357998cea0d621794526b3950d9fe4ccb0e4fc7",
+                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/2618c9b8bcd964aea9be8c549046c11f10758d1a",
+                "reference": "2618c9b8bcd964aea9be8c549046c11f10758d1a",
                 "shasum": ""
             },
             "require": {
@@ -1781,7 +1781,7 @@
                 "proprietary"
             ],
             "description": "Survos php api client",
-            "time": "2016-03-08 01:24:49"
+            "time": "2016-02-10 13:59:14"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -2487,7 +2487,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/phpunit-bridge/zipball/855dc0e829fad123966347612b4183e307338c11",
+                "url": "https://api.github.com/repos/symfony/phpunit-bridge/zipball/9562f8291b98bcd4abd4959ab74f35191d7b34b5",
                 "reference": "855dc0e829fad123966347612b4183e307338c11",
                 "shasum": ""
             },
