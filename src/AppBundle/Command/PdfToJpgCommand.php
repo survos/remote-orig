@@ -19,6 +19,7 @@ class PdfToJpgCommand extends Command
     private $output;
     private $inPath;
     private $outPath;
+    private $outCsv = [];
 
     protected function configure()
     {
@@ -29,7 +30,7 @@ class PdfToJpgCommand extends Command
                 'root-path',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Root folder where we should search for PDFs'
+                'Root folder where we should search for PDFs. Root folder should contain directly list of restaurants'
             )
             ->addOption(
                 'out-path',
@@ -44,11 +45,26 @@ class PdfToJpgCommand extends Command
         $this->output = $output;
         $root = $input->getOption('root-path');
         $this->inPath = $input->getOption('root-path');
-        $this->outPath = $input->getOption('out-path');
+        $this->outPath = $input->getOption('out-path').'/images';
         if (!is_dir($this->outPath)) {
             mkdir($this->outPath, 0777, true);
         }
         $this->parseDirectory($root);
+
+        foreach ($this->outCsv as $name => $fileData) {
+            $fp = fopen($this->outPath.'/'.$name.'.csv', 'w');
+            foreach ($fileData as $index => $line) {
+                if ($index == 0) {
+                    fputcsv($fp, array_keys($line));
+                }
+                fputcsv($fp, array_values($line));
+            }
+            fclose($fp);
+        }
+
+
+        // zip folder
+        exec("cd \"{$this->outPath}\" && cd .. && zip -rm images.zip images");
     }
 
     private function parseDirectory($directoryPath)
@@ -56,11 +72,11 @@ class PdfToJpgCommand extends Command
         $path = ($directoryPath instanceof SplFileInfo) ? $directoryPath->getPathname() : $directoryPath;
 
         $finder = new Finder();
-        $finder->directories()->in($path);
-        /** @type SplFileInfo $directory */
-        foreach ($finder as $directory) {
-            $this->parseDirectory($directory);
-        }
+//        $finder->directories()->in($path);
+//        /** @type SplFileInfo $directory */
+//        foreach ($finder as $directory) {
+//            $this->parseDirectory($directory);
+//        }
 
         $finder->files()->name('*.pdf')->in($path);
         /** @type SplFileInfo $file */
@@ -72,7 +88,7 @@ class PdfToJpgCommand extends Command
     private function processFile(SplFileInfo $path)
     {
         $relativeDirName = dirname(str_replace($this->inPath, '', $path->getPathname()));
-        $filenameParts = explode('/',$relativeDirName);
+        $filenameParts = explode('/', $relativeDirName);
         $pdfDir = array_pop($filenameParts);
         $restaurant = array_pop($filenameParts);
 
@@ -82,37 +98,33 @@ class PdfToJpgCommand extends Command
         }
         $outFilename = $outDir.'/'.str_replace('.pdf', '-%03d.png', $path->getFilename());
         $convertCommand = "gm convert -density 300 \"{$path->getPathname()}\" -resize '1280x1280>' +profile '*' +adjoin \"{$outFilename}\"";
+        $this->output->writeln("Processing {$path->getPathname()}");
         // convert directory
         exec($convertCommand);
         // create csv file
         $finder = new Finder();
         $finder->files()->name('*.png')->in($outDir);
-        $csv = [];
+
         /** @type SplFileInfo $file */
         $index = 1;
+        $this->output->writeln("-- ".$finder->count()." images");
+
         foreach ($finder as $file) {
-            $csv[] = [
+            if (!isset($this->outCsv[$restaurant])) {
+                $this->outCsv[$restaurant] = [];
+            }
+
+            $this->outCsv[$restaurant][] = [
                 'restaurant' => $restaurant,
-                'pdf'        => $path->getFilename(),
+                'pdf'        => $path->getRelativePathname(),
                 'page'       => $index,
                 'image'      => $file->getFilename(),
-                'folder'     => $pdfDir,
+                'folder'     => $relativeDirName,
 
             ];
             $index++;
         }
-        $fp = fopen($outDir.'/'.'files.csv', 'w');
-        foreach ($csv as $index => $line) {
-            if ($index == 0) {
-                fputcsv($fp, array_keys($line));
-            }
-            fputcsv($fp, array_values($line));
-        }
 
-        fclose($fp);
-
-        // zip folder
-        exec("cd \"{$outDir}\" && cd .. && zip -rm {$pdfDir}.zip {$pdfDir}");
     }
 
 }
