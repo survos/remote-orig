@@ -2,8 +2,6 @@
 
 namespace AppBundle\Command\Base;
 
-use Aws\Credentials\Credentials;
-use Aws\Sqs\SqsClient;
 use Survos\Client\SurvosClient;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\Table;
@@ -20,22 +18,12 @@ class BaseCommand extends ContainerAwareCommand
     /** @type SurvosClient */
     protected $sourceClient;
 
-    /* @type SqsClient */
-    protected $sqs;
-
     protected function configure()
     {
         parent::configure();
         $this
             ->setName('demo:base')
             ->setDescription('Base, should always be overwritten.  Should probably be declared differently');
-        $this->configureCommand();
-    }
-
-    // override to use in eg traits
-    public function configureCommand()
-    {
-
     }
 
     /**
@@ -51,27 +39,7 @@ class BaseCommand extends ContainerAwareCommand
             die();
         }
 
-        if ($input->hasOption('queue-name')) {
-            if (!$input->getOption('queue-name')) {
-                $output->writeln('<error>Option "queue-name" is missing</error>');
-                die();
-            }
-            $container = $this->getContainer();
-            $credentials = new Credentials(
-                $input->getOption('aws-key') ?: $container->getParameter('aws_key'),
-                $input->getOption('aws-secret') ?: $container->getParameter('aws_secret')
-            );
-            $region = $input->hasOption('aws-region') ? $input->getOption('aws-region') : 'us-east-1';
-            $this->sqs = new SqsClient(
-                [
-                    'credentials' => $credentials,
-                    'region'      => $region,
-                    'version'     => '2012-11-05',
-                ]
-            );
-        }
-
-        /* @todo Commnenting out for now, since these authorize() calls are broken
+        /* @todo Commenting out for now, since these authorize() calls are broken
         // configure target client
         $this->client = new SurvosClient($this->parameters['target']['endpoint']);
 

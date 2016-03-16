@@ -2,8 +2,7 @@
 
 namespace AppBundle\Command;
 
-use AppBundle\Command\Base\BaseCommand;
-use AppBundle\Command\Base\SqsFeaturesTrait;
+use AppBundle\Command\Base\SqsCommand;
 use AppBundle\Exception\AssignmentExceptionInterface;
 use AppBundle\Exception\AssignmentNotFound;
 use AppBundle\Exception\LatLonNotFound;
@@ -18,9 +17,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
-class ExternalWeatherCommand extends BaseCommand
+class ExternalWeatherCommand extends SqsCommand
 {
-    use SqsFeaturesTrait;
     private $services;
 
     protected function configure()

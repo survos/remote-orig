@@ -2,19 +2,14 @@
 
 namespace AppBundle\Command;
 
-use AppBundle\Command\Base\BaseCommand;
-use AppBundle\Command\Base\SqsFeaturesTrait;
-use Aws\Result;
+use AppBundle\Command\Base\SqsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
-class ProcessTracksCommand extends BaseCommand // BaseCommand
+class ProcessTracksCommand extends SqsCommand
 {
-    // add sqs parameters - we can use only one trait at once for now
-    use SqsFeaturesTrait;
-
     protected function configure()
     {
         parent::configure();
@@ -25,10 +20,15 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
             ->addOption(
                 'limit',
                 null,
-                InputOption::VALUE_OPTIONAL,
+                InputOption::VALUE_REQUIRED,
                 'Limit messages read from the queue in one go',
                 3
             );
+    }
+
+    protected function processMessage($data)
+    {
+        var_dump($data);
     }
 
     /**
@@ -38,20 +38,10 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $options = [
-            'QueueUrl' => $this->getQueueUrl($input->getOption('queue-name')),
-            'MaxNumberOfMessages' => $input->getOption('limit'),
-        ];
-
-        /** @type Result $result */
-        $result = $this->sqs->receiveMessage($options);
-        // iterate and query each sqs queue to get messages
-        if (isset($result['Messages'])) {
-            foreach ($result['Messages'] as $message) {
-                $data = json_decode($message['Body'], true);
-                var_dump($data);
-            }
-        }
+        $this->processQueue(
+            $input->getArgument('queue-name'),
+            $input->getOption('limit')
+        );
         return true;
     }
 }
