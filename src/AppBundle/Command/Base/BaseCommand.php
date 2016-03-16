@@ -74,8 +74,8 @@ class BaseCommand extends ContainerAwareCommand
         $this->client = new SurvosClient($this->parameters['target']['endpoint']);
         $authResult = false;
 
-        if ($input->hasOption('access_token') && $input->getOption('access_token')) {
-            $authResult = $this->client->authorize($input->getOption('access_token'));
+        if ($input->hasOption('access-token') && $input->getOption('access-token')) {
+            $authResult = $this->client->authorize($input->getOption('access-token'));
         } else {
             $authResult = $this->client->authorize(
                 $this->parameters['target']['username'],

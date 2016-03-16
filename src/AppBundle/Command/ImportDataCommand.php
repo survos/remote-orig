@@ -48,10 +48,10 @@ class ImportDataCommand extends BaseCommand
                 'Api endpoint'
             )
             ->addOption(
-                'access_token',
+                'access-token',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'access_token'
+                'access-token'
             );
     }
 
