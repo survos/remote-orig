@@ -26,7 +26,7 @@ class ProcessTracksCommand extends SqsCommand
             );
     }
 
-    protected function processMessage($data)
+    protected function processMessage($data, $message)
     {
         var_dump($data);
     }

@@ -12,6 +12,12 @@ class BaseCommand extends ContainerAwareCommand
 {
     protected $parameters;
 
+    /** @var InputInterface */
+    protected $input;
+
+    /** @var OutputInterface */
+    protected $output;
+
     /** @type SurvosClient */
     protected $client;
 
@@ -33,6 +39,8 @@ class BaseCommand extends ContainerAwareCommand
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
+        $this->input = $input;
+        $this->output = $output;
         $this->parameters = $this->getContainer()->getParameter('survos');
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');

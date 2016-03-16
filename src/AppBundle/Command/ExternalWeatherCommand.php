@@ -7,19 +7,19 @@ use AppBundle\Exception\AssignmentExceptionInterface;
 use AppBundle\Exception\AssignmentNotFound;
 use AppBundle\Exception\LatLonNotFound;
 use AppBundle\Exception\PosseExceptionInterface;
-use Aws\Result;
-use Survos\Client\Resource\AssignmentResource;
-use Survos\Client\Resource\TaskResource;
-use Survos\Client\Resource\WaveResource;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-
 
 class ExternalWeatherCommand extends SqsCommand
 {
     private $services;
+
+    /** @var string */
+    private $fromQueueName;
+
+    /** @var string */
+    private $toQueueName;
 
     protected function configure()
     {
@@ -50,82 +50,73 @@ class ExternalWeatherCommand extends SqsCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->services = [];
-        $fromQueueName = $input->getArgument('from-queue');
-        $toQueueName = $input->getArgument('to-queue');
-        /** @type Result $messages */
-        $messages = $this->sqs->receiveMessages($fromQueueName);
-        if (!isset($messages['Messages'])) {
-            $output->writeln('No messages in queue');
-            exit();
-        }
-        // iterate and query each sqs queue to get messages
-        foreach ($messages['Messages'] as $message) {
-            try {
-                $data = json_decode($message['Body'], true);
-                if (!isset($data['assignment'])) {
-                    throw new AssignmentNotFound($data, "Missing assignment in JSON data");
-                }
-                if ($input->getOption('verbose')) {
-                    dump($data);
-                }
-
-                $assignment = $data['assignment'];
-
-                $answers = $this->processAssignment($assignment, $data);
-                if ($input->getOption('verbose')) {
-                    dump($answers);
-                }
-
-                if ($answers) {
-                    $id = $assignment['id'];
-                    if ($output->isVerbose()) {
-                        $output->writeln("Updating $id");
-                        dump($answers);
-                    }
-                    $commandMessage = [
-                        'command'   => 'appendAnswers',
-                        'arguments' => [
-                            'assignment_id' => $id,
-                            'answers'       => $answers,
-                        ],
-                    ];
-                    if ($toQueueName) {
-                        $this->sqs->queue($toQueueName, $commandMessage);
-                        $output->writeln("Deleting $id");
-                    } else {
-                        dump($commandMessage);
-                        $output->writeln("No output queue specified");
-                    }
-
-                    //all good, remove from the queue
-                    $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
-                }
-            } catch (\Exception $e) {
-                if ($e instanceof AssignmentExceptionInterface) {
-                    $output->writeln(
-                        "Assignment #{$e->getAssignmentId()}. ".$e->getMessage()." data:".json_encode(
-                            $e->getRelatedData()
-                        )
-                    );
-                    // handled exception, remove from queue
-                    $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
-                } elseif ($e instanceof PosseExceptionInterface) {
-                    $output->writeln($e->getMessage()." data:".json_encode($e->getRelatedData()));
-                    // handled exception, remove from queue
-                    $this->sqs->removeMessage($fromQueueName, $message['ReceiptHandle']);
-                } else {
-                    // needs sorting as it shouldn't happen
-                    $output->writeln($e->getMessage());
-                    throw $e;
-                }
-
-            }
-
-        }
-
+        $this->fromQueueName = $input->getArgument('from-queue');
+        $this->toQueueName = $input->getArgument('to-queue');
+        $this->processQueue($this->fromQueueName);
         return 0; // OK
     }
 
+    protected function processMessage($data, $message)
+    {
+        $data = (array) $data;
+        try {
+            if (!isset($data['assignment'])) {
+                throw new AssignmentNotFound($data, "Missing assignment in JSON data");
+            }
+            if ($this->input->getOption('verbose')) {
+                dump($data);
+            }
+
+            $assignment = $data['assignment'];
+
+            $answers = $this->processAssignment($assignment, $data);
+            if ($this->input->getOption('verbose')) {
+                dump($answers);
+            }
+
+            if ($answers) {
+                $id = $assignment['id'];
+                if ($this->output->isVerbose()) {
+                    $this->output->writeln("Updating $id");
+                    dump($answers);
+                }
+                $commandMessage = [
+                    'command'   => 'appendAnswers',
+                    'arguments' => [
+                        'assignment_id' => $id,
+                        'answers'       => $answers,
+                    ],
+                ];
+                if ($this->toQueueName) {
+                    $this->queue($this->toQueueName, $commandMessage);
+                    $this->output->writeln("Deleting $id");
+                } else {
+                    dump($commandMessage);
+                    $this->output->writeln("No output queue specified");
+                }
+                //all good, remove from the queue
+                $this->deleteMessage($this->fromQueueName, $message);
+            }
+        } catch (\Exception $e) {
+            if ($e instanceof AssignmentExceptionInterface) {
+                $this->output->writeln(
+                    "Assignment #{$e->getAssignmentId()}. ".$e->getMessage()." data:".json_encode(
+                        $e->getRelatedData()
+                    )
+                );
+                // handled exception, remove from queue
+                $this->deleteMessage($this->fromQueueName, $message);
+            } elseif ($e instanceof PosseExceptionInterface) {
+                $this->output->writeln($e->getMessage()." data:".json_encode($e->getRelatedData()));
+                // handled exception, remove from queue
+                $this->deleteMessage($this->fromQueueName, $message);
+            } else {
+                // needs sorting as it shouldn't happen
+                $this->output->writeln($e->getMessage());
+                throw $e;
+            }
+        }
+    }
 
     /**
      * get weather data - store locally to not fetch in case
@@ -146,7 +137,6 @@ class ExternalWeatherCommand extends SqsCommand
         }
 
         return $this->services['weather'];
-
     }
 
     /**
@@ -182,7 +172,6 @@ class ExternalWeatherCommand extends SqsCommand
                     //throw new \Exception("Unhandled field $code in survey");
             }
         }
-
 
         return $answers;
     }

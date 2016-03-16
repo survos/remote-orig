@@ -83,16 +83,65 @@ abstract class SqsCommand extends BaseCommand
         // iterate and query each sqs queue to get messages
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
-                $this->processMessage(json_decode($message['Body']));
+                $this->processMessage(json_decode($message['Body']), $message);
             }
         }
     }
 
     /**
      * @param object $data
+     * @param array $message
      */
-    protected function processMessage($data)
+    protected function processMessage($data, $message)
     {
         throw new \Exception('Override processMessage()');
+    }
+
+    /**
+     * @param string $queueName
+     * @param object|array $messageData
+     * @return array
+     */
+    public function queue($queueName, $messageData)
+    {
+        $body = is_string($messageData) ? $messageData : json_encode($messageData);
+        $sqsResponse = $this->sqs->sendMessage(
+            [
+                'QueueUrl'    => $this->getQueueUrl($queueName),
+                'MessageBody' => $body,
+            ]
+        );
+        if ($sqsResponse->hasKey('MessageId')) {
+            $data = [
+                'status'  => 'success',
+                'message' => 'Message queued',
+                'id'      => $sqsResponse->get('MessageId'),
+            ];
+        } else {
+            $data = [
+                'status'  => 'error',
+                'message' => 'Failed to queue message',
+            ];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param string $queueName
+     * @param string|array $receiptHandle (or message)
+     * @return Result
+     */
+    public function deleteMessage($queueName, $receiptHandle)
+    {
+        if (!is_string($receiptHandle)) {
+            $receiptHandle = $receiptHandle['ReceiptHandle'];
+        }
+        return $this->sqs->deleteMessage(
+            [
+                'QueueUrl'      => $this->getQueueUrl($queueName),
+                'ReceiptHandle' => $receiptHandle,
+            ]
+        );
     }
 }
