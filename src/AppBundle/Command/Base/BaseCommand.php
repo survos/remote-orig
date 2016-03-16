@@ -9,24 +9,18 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-
 class BaseCommand extends ContainerAwareCommand
 {
     protected $parameters;
-    /**
-     * @type SurvosClient
-     */
+
+    /** @type SurvosClient */
     protected $client;
-    /**
-     * @type SurvosClient
-     */
+
+    /** @type SurvosClient */
     protected $sourceClient;
 
     /* @type SqsService */
     protected $sqs;
-    protected $awsKey;
-    protected $awsSecret;
-    protected $awsAccountId;
 
     protected function configure()
     {
@@ -43,6 +37,11 @@ class BaseCommand extends ContainerAwareCommand
 
     }
 
+    /**
+     * @param InputInterface  $input
+     * @param OutputInterface $output
+     * @throws \Exception
+     */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $this->parameters = $this->getContainer()->getParameter('survos');
@@ -59,9 +58,6 @@ class BaseCommand extends ContainerAwareCommand
             && $input->hasOption('aws-key') && $input->getOption('aws-key')
             && $input->getOption('aws-key') && $input->getOption('aws-key')
         ) {
-            $this->awsKey = $input->getOption('aws-key');
-            $this->awsSecret = $input->getOption('aws-secret');
-            $this->awsAccountId = $input->getOption('aws-account-id');
             $this->sqs = $this->sqs->getForCredentials(
                 $input->getOption('aws-account-id'),
                 $input->getOption('aws-key'),
@@ -72,7 +68,6 @@ class BaseCommand extends ContainerAwareCommand
 
         // configure target client
         $this->client = new SurvosClient($this->parameters['target']['endpoint']);
-        $authResult = false;
 
         if ($input->hasOption('access-token') && $input->getOption('access-token')) {
             $authResult = $this->client->authorize($input->getOption('access-token'));
@@ -113,10 +108,13 @@ class BaseCommand extends ContainerAwareCommand
 
     }
 
+    /**
+     * @param array           $data
+     * @param OutputInterface $output
+     */
     protected function printTableResponse(array $data, OutputInterface $output)
     {
         $table = new Table($output);
-
         $columns = [];
         foreach ($data as $line) {
             $this->processRow($line);
@@ -138,15 +136,19 @@ class BaseCommand extends ContainerAwareCommand
             ->render();
     }
 
+    /**
+     * @param array $data
+     * @param OutputInterface $output
+     */
     protected function printJsonResponse(array $data, OutputInterface $output)
     {
         $output->write(json_encode($data));
     }
 
     /**
-     * @param string                                            $format
-     * @param array                                             $data
-     * @param \Symfony\Component\Console\Output\OutputInterface $output
+     * @param string          $format
+     * @param array           $data
+     * @param OutputInterface $output
      */
     protected function printResponse($format = 'table', array $data, OutputInterface $output)
     {
@@ -154,9 +156,11 @@ class BaseCommand extends ContainerAwareCommand
         $this->$method($data, $output);
     }
 
+    /**
+     * @param object $data
+     */
     protected function processRow(&$data)
     {
 
     }
-
 }
