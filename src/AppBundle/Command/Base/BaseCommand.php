@@ -39,7 +39,6 @@ class BaseCommand extends ContainerAwareCommand
             die();
         }
 
-        /* @todo Commenting out for now, since these authorize() calls are broken
         // configure target client
         $this->client = new SurvosClient($this->parameters['target']['endpoint']);
 
@@ -48,9 +47,10 @@ class BaseCommand extends ContainerAwareCommand
         } else {
             $authResult = $this->client->authorize(
                 $this->parameters['target']['username'],
-                $this->parameters['target']['password'],
-                $this->parameters['target']['client_id'],
-                $this->parameters['target']['client_secret']
+                $this->parameters['target']['password']
+        // @todo Commenting out for now, since current authorize() does not use them
+//                $this->parameters['target']['client_id'],
+//                $this->parameters['target']['client_secret']
             );
         }
 
@@ -68,9 +68,9 @@ class BaseCommand extends ContainerAwareCommand
 
             if (!$this->sourceClient->authorize(
                 $this->parameters['source']['username'],
-                $this->parameters['source']['password'],
-                $this->parameters['source']['client_id'],
-                $this->parameters['source']['client_secret']
+                $this->parameters['source']['password']
+                // $this->parameters['source']['client_id'],
+                // $this->parameters['source']['client_secret']
             )
             ) {
                 $output->writeln(
@@ -79,7 +79,6 @@ class BaseCommand extends ContainerAwareCommand
                 die();
             }
         }
-        */
     }
 
     /**
