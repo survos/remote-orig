@@ -34,7 +34,7 @@ class ProcessTracksCommand extends SqsCommand
     /**
      * @param InputInterface   $input
      * @param OutputInterface  $output
-     * @return bool
+     * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -42,6 +42,6 @@ class ProcessTracksCommand extends SqsCommand
             $input->getArgument('queue-name'),
             $input->getOption('limit')
         );
-        return true;
+        return 0; // OK
     }
 }
