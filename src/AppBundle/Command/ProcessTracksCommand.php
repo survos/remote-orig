@@ -15,8 +15,6 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
     // add sqs parameters - we can use only one trait at once for now
     use SqsFeaturesTrait;
 
-    private $services;
-
     protected function configure()
     {
         parent::configure();
@@ -33,36 +31,27 @@ class ProcessTracksCommand extends BaseCommand // BaseCommand
             );
     }
 
-
     /**
-     * @param \Symfony\Component\Console\Input\InputInterface   $input
-     * @param \Symfony\Component\Console\Output\OutputInterface $output
+     * @param InputInterface   $input
+     * @param OutputInterface  $output
+     * @return bool
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->services = [];
-
-        $queueUrl = $input->getOption('queue-name');
-
-        $limit = $input->getOption('limit');
-
         $options = [
-            'MaxNumberOfMessages' => $limit,
+            'QueueUrl' => $this->getQueueUrl($input->getOption('queue-name')),
+            'MaxNumberOfMessages' => $input->getOption('limit'),
         ];
 
-        /** @type Result $messages */
-        $messages = $this->sqs->receiveMessages($queueUrl, $options)->toArray();
+        /** @type Result $result */
+        $result = $this->sqs->receiveMessage($options);
         // iterate and query each sqs queue to get messages
-        if (isset($messages['Messages'])) {
-            foreach ($messages['Messages'] as $message) {
+        if (isset($result['Messages'])) {
+            foreach ($result['Messages'] as $message) {
                 $data = json_decode($message['Body'], true);
                 var_dump($data);
-                // process track
-
             }
         }
-
+        return true;
     }
-
-
 }

@@ -16,28 +16,32 @@ trait SqsFeaturesTrait
     public function configureCommand()
     {
         $this->addOption(
-            'queue-name',
-            null,
-            InputOption::VALUE_REQUIRED,
-            'SQS Queue Name'
-        )
-            ->addOption(
-                'aws-account-id',
+                'queue-name',
                 null,
-                InputOption::VALUE_OPTIONAL,
-                'SQS account ID'
+                InputOption::VALUE_REQUIRED,
+                'SQS Queue Name'
             )
             ->addOption(
                 'aws-key',
                 null,
-                InputOption::VALUE_OPTIONAL,
-                'SQS key'
+                InputOption::VALUE_REQUIRED,
+                'SQS key (defaults to aws_key from parameters.yml)'
             )
             ->addOption(
                 'aws-secret',
                 null,
-                InputOption::VALUE_OPTIONAL,
-                'SQS secret'
+                InputOption::VALUE_REQUIRED,
+                'SQS secret (defaults to aws_secret from parameters.yml)'
             );
+    }
+
+    /**
+     * @param string $queueName
+     * @return string
+     */
+    protected function getQueueUrl($queueName)
+    {
+        return preg_match('{^https?:}', $queueName) ? $queueName :
+            $this->sqs->getQueueUrl(['QueueName' => $queueName])->get('QueueUrl');
     }
 }
