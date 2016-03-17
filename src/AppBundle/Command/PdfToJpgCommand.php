@@ -118,7 +118,7 @@ class PdfToJpgCommand extends Command
                 'restaurant' => $restaurant,
                 'pdf'        => $path->getRelativePathname(),
                 'page'       => $index,
-                'image'      => $file->getFilename(),
+                'image'      => $relativeDirName.'/'.$file->getFilename(),
                 'folder'     => $relativeDirName,
 
             ];
