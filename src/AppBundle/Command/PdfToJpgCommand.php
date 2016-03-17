@@ -64,7 +64,7 @@ class PdfToJpgCommand extends Command
 
 
         // zip folder
-        exec("cd \"{$this->outPath}\" && cd .. && zip -rm images.zip images");
+        exec("cd \"{$this->outPath}\" && zip -rm ../images.zip *");
     }
 
     private function parseDirectory($directoryPath)
