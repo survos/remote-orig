@@ -3,6 +3,8 @@
 namespace AppBundle\Command;
 
 use AppBundle\Command\Base\SqsCommand;
+use Survos\Client\Resource\ObserveResource;
+use Survos\Client\Resource\UserResource;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -19,27 +21,34 @@ class TraccarTracksCommand extends SqsCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $continue = true;
-        while ($continue) {
+        while (true) {
             $processed = $this->processQueue(
                 $input->getArgument('queue-name')
             );
             $this->output->writeln("$processed messages processed");
-            $continue = false;
         }
         return 0; // OK
     }
 
     protected function processMessage($inData, $message)
     {
+        if ($this->output->isVerbose()) {
+            print json_encode($inData, JSON_PRETTY_PRINT) . "\n";
+        }
         $username = $inData->id;
+        $userResource = new UserResource($this->client);
+        $user = $userResource->getOneBy(['username' => $username]);
+        if (!$user) {
+            $this->output->writeln("<error>No such user: $username</error>");
+            return false;
+        }
         $timestamp = gmdate('Y-m-d\TH:i:s\Z', $inData->timestamp);
         $userAgent = $inData->user_agent;
         $app = ['name' => 'Traccar'];
         if (preg_match('{TraccarClient/([\d.]+)}', $userAgent, $m)) {
             $app['version'] = $m[1];
         }
-        $device = ['uuid' => md5($username . '-traccar')]; // not sure what to use;
+        $device = ['uuid' => md5($username . '-traccar')]; // not sure what to use
         if (preg_match('{Android ([\d.]+); (\S+) Build}', $userAgent, $m)) {
             $device['platform'] = 'Android';
             $device['version'] = $m[1];
@@ -49,7 +58,7 @@ class TraccarTracksCommand extends SqsCommand
             $device['platform'] = 'iOS';
         }
         $outData = [
-            'tz' => 'America/New_York', // get from user
+            'tz' => $user['timezone_name'],
             'app' => $app,
             'device' => $device,
             'location' => [
@@ -68,63 +77,16 @@ class TraccarTracksCommand extends SqsCommand
                 'timestamp' => $timestamp,
             ],
         ];
-        print json_encode($outData, JSON_PRETTY_PRINT);
+        if ($this->output->isVerbose()) {
+            print json_encode($outData, JSON_PRETTY_PRINT) . "\n";
+        }
+        $observeResource = new ObserveResource($this->client);
+        $response = $observeResource->postLocation($outData, $user['id']);
+        if (isset($response['locations']) && $response['locations'] == 1) {
+            $this->output->writeln('Point added');
+            return true;
+        }
+        $this->output->writeln('<error>Error: ' . json_encode($response) . '</error>');
         return false;
     }
 }
-
-/*
-{
-    "tz": "America/New_York",
-    "app": {
-      "name": "Tracker",
-      "version": "1.4.20"
-    },
-    "device": {
-      "uuid": "a85c1413dde47af4",
-      "model": "SM-G920P",
-      "serial": "0715f7c3ac161e38",
-      "cordova": "4.1.1",
-      "version": "5.1.1",
-      "platform": "Android",
-      "available": true,
-      "isVirtual": false,
-      "manufacturer": "samsung"
-    },
-    "location": [
-      {
-        "uuid": "88001375-f589-4be8-81f0-06df720a73c7",
-        "coords": {
-          "speed": 0,
-          "heading": 0,
-          "accuracy": 20.464000701904,
-          "altitude": 0,
-          "latitude": 38.9135748,
-          "longitude": -77.0448877
-        },
-        "extras": {
-          "mode": "background",
-          "event": {
-            "code": "heartbeat",
-            "memory": {
-              "capacity": 2812780544,
-              "availableCapacity": 415010816
-            }
-          }
-        },
-        "battery": {
-          "level": 0.6700000166893,
-          "is_charging": false
-        },
-        "activity": {
-          "type": "still",
-          "confidence": 77
-        },
-        "odometer": 3623.9616699219,
-        "is_moving": false,
-        "timestamp": "2016-03-18T17:17:53.676Z"
-      }
-    ]
-}
-
- */
