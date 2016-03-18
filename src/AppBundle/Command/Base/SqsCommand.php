@@ -77,8 +77,7 @@ abstract class SqsCommand extends BaseCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $processed = $this->processQueue(
-            $input->getArgument('queue-name'),
-            $input->getOption('limit')
+            $input->getArgument('queue-name')
         );
         $this->output->writeln("$processed messages processed");
         return 0; // OK
@@ -96,15 +95,15 @@ abstract class SqsCommand extends BaseCommand
 
     /**
      * @param string $queueName
-     * @param int $limit
      * @return int number of message processed
      */
-    protected function processQueue($queueName, $limit = 10)
+    protected function processQueue($queueName)
     {
         $processed = 0;
         $options = [
             'QueueUrl' => $this->getQueueUrl($queueName),
-            'MaxNumberOfMessages' => $limit,
+            'MaxNumberOfMessages' => $this->input->getOption('limit'),
+            'WaitTimeSeconds' => 20,
         ];
         /** @type Result $result */
         $result = $this->sqs->receiveMessage($options);
