@@ -72,8 +72,14 @@ abstract class SqsCommand extends BaseCommand
             $this->sqs->getQueueUrl(['QueueName' => $queueName])->get('QueueUrl');
     }
 
+    /**
+     * @param string $queueName
+     * @param int $limit
+     * @return int number of message processed
+     */
     protected function processQueue($queueName, $limit = 10)
     {
+        $processed = 0;
         $options = [
             'QueueUrl' => $this->getQueueUrl($queueName),
             'MaxNumberOfMessages' => $limit,
@@ -83,23 +89,29 @@ abstract class SqsCommand extends BaseCommand
         // iterate and query each sqs queue to get messages
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
-                $this->processMessage(json_decode($message['Body']), $message);
+                $ok = $this->processMessage(json_decode($message['Body']), $message);
+                if ($ok) {
+                    $this->deleteMessage($queueName, $message);
+                    $processed++;
+                }
             }
         }
+        return $processed;
     }
 
     /**
+     * Process message. Return true if everything is OK, and message will be deleted from SQS in processQueue().
+     * Return false if something goes wrong, and message will not be deleted.
+     *
      * @param object $data
      * @param array $message
+     * @return bool whether message was successfully processed
      */
-    protected function processMessage($data, $message)
-    {
-        throw new \Exception('Override processMessage()');
-    }
+    abstract protected function processMessage($data, $message);
 
     /**
      * @param string $queueName
-     * @param object|array $messageData
+     * @param object|array|string $messageData
      * @return array
      */
     public function queue($queueName, $messageData)

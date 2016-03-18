@@ -29,6 +29,7 @@ class ProcessTracksCommand extends SqsCommand
     protected function processMessage($data, $message)
     {
         var_dump($data);
+        return false;
     }
 
     /**
@@ -38,10 +39,11 @@ class ProcessTracksCommand extends SqsCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->processQueue(
+        $processed = $this->processQueue(
             $input->getArgument('queue-name'),
             $input->getOption('limit')
         );
+        $this->output->writeln("$processed messages processed");
         return 0; // OK
     }
 }
