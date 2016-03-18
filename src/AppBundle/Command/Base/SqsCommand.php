@@ -18,9 +18,7 @@ abstract class SqsCommand extends BaseCommand
     protected function configure()
     {
         parent::configure();
-        $this->setName('demo:sqs')
-            ->setDescription('Should always be overridden')
-            ->addArgument(
+        $this->addArgument(
                 'queue-name',
                 InputArgument::REQUIRED,
                 'SQS Queue Name'
@@ -36,6 +34,13 @@ abstract class SqsCommand extends BaseCommand
                 null,
                 InputOption::VALUE_REQUIRED,
                 'SQS secret (defaults to aws_secret from parameters.yml)'
+            )
+            ->addOption(
+                'limit',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Limit messages read from the queue in one go',
+                10
             );
     }
 
@@ -60,6 +65,23 @@ abstract class SqsCommand extends BaseCommand
                 'version'     => '2012-11-05',
             ]
         );
+    }
+
+    /**
+     * Override this to do something other than (or in addition to) processing the queue
+     *
+     * @param InputInterface   $input
+     * @param OutputInterface  $output
+     * @return int
+     */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $processed = $this->processQueue(
+            $input->getArgument('queue-name'),
+            $input->getOption('limit')
+        );
+        $this->output->writeln("$processed messages processed");
+        return 0; // OK
     }
 
     /**

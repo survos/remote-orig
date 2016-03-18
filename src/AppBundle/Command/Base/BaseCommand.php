@@ -8,8 +8,18 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class BaseCommand extends ContainerAwareCommand
+abstract class BaseCommand extends ContainerAwareCommand
 {
+    /** @var string (should be overridden in subclass) */
+    protected $name = 'demo:base';
+
+    /** @var string (should be overridden in subclass) */
+    protected $description = 'Override $this->description property in subclass';
+
+    /** @var string (should be overridden in subclass) */
+    protected $help = '';
+
+    /** @var array */
     protected $parameters;
 
     /** @var InputInterface */
@@ -27,9 +37,8 @@ class BaseCommand extends ContainerAwareCommand
     protected function configure()
     {
         parent::configure();
-        $this
-            ->setName('demo:base')
-            ->setDescription('Base, should always be overwritten.  Should probably be declared differently');
+        $this->setName($this->name)
+            ->setDescription($this->description);
     }
 
     /**
