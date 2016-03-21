@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b8c06d7d66c5b1eebd58a0807994b43e",
-    "content-hash": "63052e6efd090886b538e2e1fd43444c",
+    "hash": "ef25e19141303e94413bc61885ba1e39",
+    "content-hash": "cf03ac6094b852c99cd6c3f07f51e7d9",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1483,7 +1483,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/a93889dfb1c0ae465b62236ede8d00d3ea260952",
+                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/c7e26a21ba357863de030f0b9e701c7d04593774",
                 "reference": "a93889dfb1c0ae465b62236ede8d00d3ea260952",
                 "shasum": ""
             },
@@ -1777,16 +1777,16 @@
         },
         {
             "name": "survos/platform-api-php",
-            "version": "1.1.30",
+            "version": "1.1.31",
             "source": {
                 "type": "git",
                 "url": "https://github.com/survos/platform-api-php.git",
-                "reference": "5608832efb9ca7b58a4ba0639baab44d413b9b0c"
+                "reference": "3eb0ae0acec987ed85500be662d9452bfa74dfb9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/5608832efb9ca7b58a4ba0639baab44d413b9b0c",
-                "reference": "5608832efb9ca7b58a4ba0639baab44d413b9b0c",
+                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/3eb0ae0acec987ed85500be662d9452bfa74dfb9",
+                "reference": "3eb0ae0acec987ed85500be662d9452bfa74dfb9",
                 "shasum": ""
             },
             "require": {
@@ -1803,7 +1803,7 @@
                 "proprietary"
             ],
             "description": "Survos php api client",
-            "time": "2016-03-18 20:22:47"
+            "time": "2016-03-21 15:21:38"
         },
         {
             "name": "swiftmailer/swiftmailer",
