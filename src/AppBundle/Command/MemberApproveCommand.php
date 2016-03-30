@@ -36,7 +36,8 @@ class MemberApproveCommand extends SqsCommand
         if ($this->output->isVerbose()) {
             print json_encode($inData, JSON_PRETTY_PRINT) . "\n";
         }
-        // @todo get $action and $memberId from SQS message
+        $memberId = $inData->member_id;
+        $action = $inData->action;
         $memberResource = new MemberResource($this->client);
         $response = $memberResource->setApplicantsStatus($memberId, $action);
         if ($this->output->isVerbose()) {
