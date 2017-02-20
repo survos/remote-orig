@@ -132,7 +132,6 @@ class XferMembersCommand extends BaseCommand
                     $output->writeln(
                         "<error>Problem saving {$findByField}:{$findByValue}:{$e->getMessage()} </error>"
                     );
-                    var_dump($member);
                 }
             }
 

@@ -181,7 +181,7 @@ class TrackTasksCommand extends BaseCommand
          */
         function GetCenterFromDegrees($data)
         {
-            if (!is_array($data) or empty($data)) {
+            if (!is_array($data) || empty($data)) {
                 return false;
             }
 

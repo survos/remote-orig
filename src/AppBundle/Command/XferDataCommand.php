@@ -85,7 +85,6 @@ class XferDataCommand extends BaseCommand
                     $output->writeln(
                         "<error>Problem saving data: {$e->getMessage()} </error>"
                     );
-                    var_dump($dataImage);
                 }
             }
 

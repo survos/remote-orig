@@ -84,7 +84,7 @@ class ExportDataCommand extends BaseCommand
                 if ($isVerbose) {
                     $output->writeln("{$no} - Reading data #{$dataImage['id']}");
                 }
-                if (!$urlOnly and ($no == 1) )
+                if (!$urlOnly && ($no == 1) )
                 {
                     fputcsv($fp, array_keys($dataImage));
                 }

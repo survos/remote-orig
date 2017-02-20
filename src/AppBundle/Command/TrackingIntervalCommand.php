@@ -69,6 +69,5 @@ class TrackingIntervalCommand extends BaseCommand
             null,
             ['start_date' => $date]
         );
-        var_dump($result);
     }
 }

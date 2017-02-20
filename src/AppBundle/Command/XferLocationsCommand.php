@@ -82,14 +82,12 @@ class XferLocationsCommand extends BaseCommand
                 [],
                 ['details' => true]
             );
-            var_dump($result['items']); die();
             $maxPages = $result['pages'];
             // if no items, return
             if (!count($result['items']) || !$result['total']) {
                 break;
             }
 
-            var_dump($result['items']); die();
             $locationsToPost = [];
             foreach ($result['items'] as $key => $location) {
                 if ($isVerbose) {

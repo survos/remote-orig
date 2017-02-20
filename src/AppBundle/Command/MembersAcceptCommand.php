@@ -67,7 +67,6 @@ class MembersAcceptCommand extends BaseCommand
                 if ($this->checkAccept($member)) {
                     // activate member
                      $memberResource->setApplicantsStatus([$member['id']],'accept','Accepted via API');
-                    var_dump($member);
 
                     if ($isVerbose) {
                         $output->writeln("Accepting member #{$member['id']}");

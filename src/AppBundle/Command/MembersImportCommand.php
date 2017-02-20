@@ -53,7 +53,7 @@ class MembersImportCommand extends BaseCommand
                         'permission_type_code' => $row['permission_type_code'],
                     ]
                 );
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 print "Error importing member {$row['code']}:".$e->getMessage()."\n";
             }
 

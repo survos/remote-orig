@@ -130,8 +130,7 @@ class ProjectsImportCommand extends BaseCommand
                     print "Saving member '$username' for project ".$project['code']."\n";
                     $res = $memberResource->save($params);
                 }
-            } catch (Exception $e) {
-                var_dump($params);
+            } catch (\Exception $e) {
                 $output->writeln("<error>Error importing member: {$e->getMessage()}</error>");
             }
 

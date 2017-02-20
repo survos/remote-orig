@@ -71,7 +71,6 @@ class TasksActionCommand extends BaseCommand
                 if ($this->checkAction($task)) {
                     // do action (needs implementing in task resource helper)
 //                    $taskResource->setApplicantsStatus([$task['id']], 'accept', 'Accepted via API');
-                    var_dump($task);
 
                     if ($isVerbose) {
                         $output->writeln("action on task  #{$task['id']}");
