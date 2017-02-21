@@ -1,6 +1,7 @@
 {
-  "name": "tac/demo",
+  "name": "survos/remote",
   "license": "proprietary",
+  "description": "External processes that use the API and queues to exchange data with the Survos Platform",
   "type": "project",
   "autoload": {
     "psr-4": {

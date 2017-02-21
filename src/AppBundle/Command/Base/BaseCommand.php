@@ -53,7 +53,6 @@ abstract class BaseCommand extends ContainerAwareCommand
         $this->parameters = $this->getContainer()->getParameter('survos');
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');
-            die();
         }
 
         // configure target client
@@ -93,7 +92,6 @@ abstract class BaseCommand extends ContainerAwareCommand
                 $output->writeln(
                     "<error>Wrong credentials for source endpoint: {$this->parameters['source']['endpoint']}</error>"
                 );
-                die();
             }
         }
     }

@@ -64,11 +64,11 @@ class SurveysXferCommand extends BaseCommand
 
         if (!$sourceProject) {
             $output->writeln("<error>Project '{$sourceProjectCode}' not found</error>");
-            exit;
+            return false;
         }
         if (!$targetProject) {
             $output->writeln("<error>Project '{$targetProjectCode}' not found</error>");
-            exit;
+            return false;
         }
 
         $sourceSurveyId = $input->getOption('source-survey-id');
