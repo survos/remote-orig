@@ -4,7 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "64cb13d9528fa706938fae56a837c403",
+    "hash": "23f8d24768831b052969abd9d877f921",
+    "content-hash": "fc18f66bd211e9b948107d90e058930c",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -84,7 +85,55 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2017-02-17T20:09:40+00:00"
+            "time": "2017-02-17 20:09:40"
+        },
+        {
+            "name": "bcncommerce/json-stream",
+            "version": "0.3.0",
+            "target-dir": "Bcn/Component/Json",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/skolodyazhnyy/json-stream.git",
+                "reference": "9ce2aa962bc881fb0222246ba2d6d6e52d1ea5aa"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/skolodyazhnyy/json-stream/zipball/9ce2aa962bc881fb0222246ba2d6d6e52d1ea5aa",
+                "reference": "9ce2aa962bc881fb0222246ba2d6d6e52d1ea5aa",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "require-dev": {
+                "bcncommerce/stream-wrapper": "dev-master",
+                "phpunit/phpunit": "~3.7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Bcn\\Component\\Json\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sergey Kolodyazhnyy",
+                    "email": "sergey.kolodyazhnyy@gmail.com"
+                }
+            ],
+            "description": "A bundle of tools to work with JSON in PHP",
+            "keywords": [
+                "json",
+                "parser",
+                "reader",
+                "streaming",
+                "writer"
+            ],
+            "time": "2014-04-27 23:53:40"
         },
         {
             "name": "doctrine/annotations",
@@ -288,7 +337,7 @@
                 "collections",
                 "iterator"
             ],
-            "time": "2017-01-03T10:49:41+00:00"
+            "time": "2017-01-03 10:49:41"
         },
         {
             "name": "doctrine/common",
@@ -602,7 +651,7 @@
                 "cache",
                 "caching"
             ],
-            "time": "2016-01-26T17:28:51+00:00"
+            "time": "2016-01-26 17:28:51"
         },
         {
             "name": "doctrine/inflector",
@@ -1030,7 +1079,7 @@
                 "stream",
                 "uri"
             ],
-            "time": "2016-06-24T23:00:38+00:00"
+            "time": "2016-06-24 23:00:38"
         },
         {
             "name": "incenteev/composer-parameter-handler",
@@ -1136,7 +1185,7 @@
                 "random-numbers",
                 "random-strings"
             ],
-            "time": "2016-09-07T15:52:06+00:00"
+            "time": "2016-09-07 15:52:06"
         },
         {
             "name": "ircmaxell/security-lib",
@@ -1182,7 +1231,7 @@
             ],
             "description": "A Base Security Library",
             "homepage": "https://github.com/ircmaxell/SecurityLib",
-            "time": "2015-03-20T14:31:23+00:00"
+            "time": "2015-03-20 14:31:23"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -1282,7 +1331,7 @@
                 "read",
                 "write"
             ],
-            "time": "2015-07-16T20:24:42+00:00"
+            "time": "2015-07-16 20:24:42"
         },
         {
             "name": "league/oauth2-client",
@@ -1345,7 +1394,7 @@
                 "oauth2",
                 "single sign on"
             ],
-            "time": "2016-07-28T13:20:43+00:00"
+            "time": "2016-07-28 13:20:43"
         },
         {
             "name": "monolog/monolog",
@@ -1478,7 +1527,7 @@
                 "json",
                 "jsonpath"
             ],
-            "time": "2016-12-03T22:08:25+00:00"
+            "time": "2016-12-03 22:08:25"
         },
         {
             "name": "paragonie/random_compat",
@@ -1526,7 +1575,7 @@
                 "pseudorandom",
                 "random"
             ],
-            "time": "2016-11-07T23:38:38+00:00"
+            "time": "2016-11-07 23:38:38"
         },
         {
             "name": "psr/cache",
@@ -1930,16 +1979,16 @@
         },
         {
             "name": "survos/platform-api-php",
-            "version": "1.1.31",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/survos/platform-api-php.git",
-                "reference": "3eb0ae0acec987ed85500be662d9452bfa74dfb9"
+                "reference": "365e3e15fd59d2515a4409411dd68fa9061f8d5e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/3eb0ae0acec987ed85500be662d9452bfa74dfb9",
-                "reference": "3eb0ae0acec987ed85500be662d9452bfa74dfb9",
+                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/365e3e15fd59d2515a4409411dd68fa9061f8d5e",
+                "reference": "365e3e15fd59d2515a4409411dd68fa9061f8d5e",
                 "shasum": ""
             },
             "require": {
@@ -1956,7 +2005,7 @@
                 "proprietary"
             ],
             "description": "Survos php api client",
-            "time": "2016-03-21T15:21:38+00:00"
+            "time": "2016-06-03 19:48:09"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -2680,7 +2729,7 @@
                 }
             ],
             "description": "This bundle generates code for you",
-            "time": "2017-01-16T16:53:36+00:00"
+            "time": "2017-01-16 16:53:36"
         },
         {
             "name": "symfony/phpunit-bridge",
@@ -2738,12 +2787,14 @@
             ],
             "description": "Symfony PHPUnit Bridge",
             "homepage": "https://symfony.com",
-            "time": "2017-02-18T17:06:33+00:00"
+            "time": "2017-02-18 17:06:33"
         }
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "survos/platform-api-php": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

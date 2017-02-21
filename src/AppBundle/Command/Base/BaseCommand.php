@@ -54,24 +54,28 @@ abstract class BaseCommand extends ContainerAwareCommand
         if (!is_array($this->parameters) || !count($this->parameters)) {
             $output->writeln('<error>Config file could not be found or is not correct</error>');
         }
+        $this->initClient();
+    }
 
+    protected function initClient()
+    {
         // configure target client
         $this->client = new SurvosClient($this->parameters['target']['endpoint']);
 
-        if ($input->hasOption('access-token') && $input->getOption('access-token')) {
-            $authResult = $this->client->authorize($input->getOption('access-token'));
+        if ($this->input->hasOption('access-token') && $this->input->getOption('access-token')) {
+            $authResult = $this->client->authorize($this->input->getOption('access-token'));
         } else {
             $authResult = $this->client->authorize(
                 $this->parameters['target']['username'],
                 $this->parameters['target']['password']
-        // @todo Commenting out for now, since current authorize() does not use them
+            // @todo Commenting out for now, since current authorize() does not use them
 //                $this->parameters['target']['client_id'],
 //                $this->parameters['target']['client_secret']
             );
         }
 
         if (!$authResult) {
-            $output->writeln(
+            $this->output->writeln(
                 "<error>Wrong credentials for target endpoint: {$this->parameters['target']['endpoint']}</error>"
             );
         }
@@ -85,11 +89,11 @@ abstract class BaseCommand extends ContainerAwareCommand
             if (!$this->sourceClient->authorize(
                 $this->parameters['source']['username'],
                 $this->parameters['source']['password']
-                // $this->parameters['source']['client_id'],
-                // $this->parameters['source']['client_secret']
+            // $this->parameters['source']['client_id'],
+            // $this->parameters['source']['client_secret']
             )
             ) {
-                $output->writeln(
+                $this->output->writeln(
                     "<error>Wrong credentials for source endpoint: {$this->parameters['source']['endpoint']}</error>"
                 );
             }
