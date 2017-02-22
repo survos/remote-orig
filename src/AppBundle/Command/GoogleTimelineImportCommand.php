@@ -31,13 +31,15 @@ class GoogleTimelineImportCommand extends SqsCommand
     protected function processMessage($data, $message)
     {
         $data = (array) $data;
-        if (!isset($data['url'])) {
-            throw new \Exception($data, "Missing assignment in JSON data");
+        if (!isset($data['payload'])) {
+            throw new \Exception($data, "Missing payload in JSON data");
         }
+        $payload = $data['payload'];
         if ($this->input->getOption('verbose')) {
-            dump($data);
+            dump($data, $payload);
         }
-        $localPath = $this->downloadFile($data['url']);
+
+        $localPath = $this->downloadFile($payload->timeline_filename);
         $answers = $this->processFile($localPath);
         if ($this->input->getOption('verbose')) {
             dump($answers);
