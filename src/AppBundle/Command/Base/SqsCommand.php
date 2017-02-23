@@ -142,7 +142,7 @@ abstract class SqsCommand extends BaseCommand
         $processed = 0;
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
-                $ok = true;// $this->processMessage(json_decode($message['Body']), $message);
+                $ok = $this->processMessage(json_decode($message['Body']), $message);
                 if ($ok) {
                     $this->deleteMessage($queueName, $message);
                     $processed++;
