@@ -37,6 +37,7 @@ abstract class SqsCommand extends BaseCommand
                 InputOption::VALUE_REQUIRED,
                 'SQS secret (defaults to aws_secret from parameters.yml)'
             )
+            ->addOption('delete-bad', null, InputOption::VALUE_NONE, 'delete unprocessable messages')
             ->addOption(
                 'limit',
                 null,
@@ -142,7 +143,12 @@ abstract class SqsCommand extends BaseCommand
         $processed = 0;
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
-                $ok = $this->processMessage(json_decode($message['Body']), $message);
+                try {
+                    $ok = $this->processMessage(json_decode($message['Body']), $message);
+                } catch (\Exception $e) {
+                    $this->output->writeln("Queue '{$queueName}': Error! {$e->getMessage()}");
+                    $ok = $this->input->getOption('delete-bad');
+                }
                 if ($ok) {
                     $this->deleteMessage($queueName, $message);
                     $processed++;

@@ -7,6 +7,7 @@ use Survos\Client\Resource\ObserveResource;
 use Survos\Client\SurvosClient;
 use Survos\Client\SurvosException;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class GoogleTimelineImportCommand extends SqsCommand
 {
@@ -25,29 +26,63 @@ class GoogleTimelineImportCommand extends SqsCommand
 
     private $queue = [];
 
+    /** @var SurvosClient */
+    private $mapmobClient;
+    /** @var SurvosClient */
+    private $survosClient;
+
     protected function processMessage($data, $message)
     {
-        $data = (array) $data;
-        if (!isset($data['payload'])) {
-            throw new \Exception($data, "Missing payload in JSON data");
-        }
-        if (!isset($data['mapmobToken'])) {
-            throw new \Exception($data, "Missing mapmobToken in JSON data");
-        }
-        $this->client = $this->getClient($this->input->getOption('api-url'), $data['mapmobToken']);
-
-        $payload = $data['payload'];
+        $data = $this->validateMessage($data);
+        $payload = (array)$data['payload'];
         if ($this->input->getOption('verbose')) {
             dump($data, $payload);
         }
+        $this->mapmobClient = $this->getClient($this->input->getOption('api-url'), $data['mapmobToken']);
+        $this->survosClient = $this->getClient($data['apiUrl'], $data['accessToken']);
 
-        $localPath = $this->downloadFile($payload->timeline_filename);
-        $answers = $this->processFile($localPath);
+        $localPath = $this->downloadFile($payload['timeline_filename']);
+        $answersResolver = new OptionsResolver();
+        $answersResolver->setDefaults($payload);
+        $answers = $answersResolver->resolve($this->processFile($localPath));
         if ($this->input->getOption('verbose')) {
             dump($answers);
         }
-        //TODO: send the answers back to /api1.0/channel/receive-data
+        $this->sendAnswers($data['taskId'], $answers);
+
         return true;
+    }
+
+    /**
+     * TODO: send the answers back to /api1.0/channel/receive-data
+     * @param $taskId
+     * @param array $answers
+     */
+    private function sendAnswers($taskId, array $answers)
+    {
+        $currentUserId = $this->survosClient->getLoggedUser()['id'];
+        $data = [
+            'answers' => $answers,
+            'memberId' => $currentUserId,
+            'taskId' => $taskId,
+            'assignmentId' => '',
+            'language' => 'en',
+        ];
+        $observeRes = new ObserveResource($this->survosClient);
+        $response = $observeRes->saveResponses($data);
+        $this->output->writeln("Submitted, status: {$response['status']}");
+    }
+
+    /**
+     * @param object $data
+     * @return array
+     */
+    private function validateMessage($data)
+    {
+        $resolver = new OptionsResolver();
+        $resolver->setDefined(['action', 'deployment', 'parameters']);
+        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId']);
+        return $resolver->resolve((array) $data);
     }
 
     private function downloadFile($url)
@@ -79,9 +114,12 @@ class GoogleTimelineImportCommand extends SqsCommand
         $batchSize = $this->input->getOption('batch-size');
         $limit = $this->input->getOption('row-limit');
         $count = 0;
+        $dates = [];
         foreach ($this->getItems($sourceFile) as $item) {
             if (null !== $data = $this->normalizeItem($item)) {
                 $this->addToQueue($data);
+                $date = date('Y-m-d', strtotime($data['timestamp']));
+                $dates[$date] = ($dates[$date] ?? 0) + 1;
             }
             $count++;
             if ($count % $batchSize === 0) {
@@ -93,7 +131,10 @@ class GoogleTimelineImportCommand extends SqsCommand
             }
         }
         $this->flushQueue();
-        return ['records_count' => $count];
+        return [
+            'track_count' => array_sum($dates),
+            'day_count' => count($dates),
+        ];
     }
 
     /*
@@ -193,10 +234,10 @@ class GoogleTimelineImportCommand extends SqsCommand
         if (empty($this->queue)) {
             return;
         }
-        $deviceId = md5($this->client->getLoggedUser()['id']);
+        $deviceId = md5($this->mapmobClient->getLoggedUser()['id']);
         $data = $this->prepareData($this->queue, $deviceId);
-        $this->output->writeln(sprintf('Submitting %d points to %s', count($this->queue), $this->client->getEndpoint()));
-        $this->submitLocationData($this->client, $data);
+        $this->output->writeln(sprintf('Submitting %d points to %s', count($this->queue), $this->mapmobClient->getEndpoint()));
+        $this->submitLocationData($this->mapmobClient, $data);
         $this->queue = [];
     }
 
@@ -238,7 +279,7 @@ class GoogleTimelineImportCommand extends SqsCommand
             $this->output->writeln(sprintf('Response data: %s', $client->getLastResponseData()));
             throw new \Exception("Can't log in. ApiUrl: '{$apiUrl}', token: '{$accessToken}'");
         }
-        $this->output->writeln(sprintf('Logged in under "%s"', $client->getLoggedUser()['username']));
+        $this->output->writeln(sprintf('Logged in under "%s" against "%s"', $client->getLoggedUser()['username'], $apiUrl));
         return $client;
     }
 
