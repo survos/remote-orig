@@ -5,6 +5,8 @@ namespace AppBundle\Command\Base;
 use Aws\Credentials\Credentials;
 use Aws\Result;
 use Aws\Sqs\SqsClient;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -67,6 +69,9 @@ abstract class SqsCommand extends BaseCommand
         );
     }
 
+    /** @var Promise[] */
+    protected $promises = [];
+
     /**
      * Override this to do something other than (or in addition to) processing the queue
      *
@@ -76,11 +81,25 @@ abstract class SqsCommand extends BaseCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $processed = $this->processQueue(
-            $input->getArgument('queue-name')
-        );
-        $this->output->writeln("$processed messages processed");
+        $queues = explode(',', $input->getArgument('queue-name'));
+        while (true) {
+            foreach ($queues as $queue) {
+                if (isset($this->promises[$queue]) && $this->isPromisePending($this->promises[$queue])) {
+                    $this->output->writeln("Queue '{$queue}': pending");
+                    continue;
+                }
+                $this->output->writeln("Queue '{$queue}': initiating");
+                $this->promises[$queue] = $this->processQueue($queue);
+            }
+            \GuzzleHttp\Promise\unwrap($this->promises);
+        }
+
         return 0; // OK
+    }
+
+    private function isPromisePending(Promise $promise)
+    {
+        return $promise->getState() === PromiseInterface::PENDING;
     }
 
     /**
@@ -95,29 +114,42 @@ abstract class SqsCommand extends BaseCommand
 
     /**
      * @param string $queueName
-     * @return int number of message processed
+     * @return Promise
      */
     protected function processQueue($queueName)
     {
-        $processed = 0;
         $options = [
             'QueueUrl' => $this->getQueueUrl($queueName),
             'MaxNumberOfMessages' => $this->input->getOption('limit'),
             'WaitTimeSeconds' => 20,
         ];
-        /** @type Result $result */
-        $result = $this->sqs->receiveMessage($options);
-        // iterate and query each sqs queue to get messages
+        $promise = $this->sqs->receiveMessageAsync($options);
+        $promise->then(function (Result $result) use ($queueName) {
+            $this->output->writeln("Queue '{$queueName}': resolved!");
+            $this->processMessages($result, $queueName);
+        }, function (\Exception $e) use ($queueName) {
+            $this->output->writeln("Queue '{$queueName}': rejected! {$e->getMessage()}");
+        });
+        return $promise;
+    }
+
+    /**
+     * @param Result $result
+     * @param string $queueName
+     */
+    protected function processMessages(Result $result, $queueName)
+    {
+        $processed = 0;
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
-                $ok = $this->processMessage(json_decode($message['Body']), $message);
+                $ok = true;// $this->processMessage(json_decode($message['Body']), $message);
                 if ($ok) {
                     $this->deleteMessage($queueName, $message);
                     $processed++;
                 }
             }
         }
-        return $processed;
+        $this->output->writeln("Queue '{$queueName}': {$processed} messages processed");
     }
 
     /**
