@@ -90,20 +90,18 @@ class GoogleTimelineImportCommand extends SqsCommand
         $path = sys_get_temp_dir() . '/' . md5($url). '.zip';
         if (!file_exists($path)) {
             $newfname = $path;
-            $file = fopen($url, 'rb');
-            if ($file) {
+            if ($file = fopen($url, 'rb'))
+            {
                 $newf = fopen($newfname, 'wb');
                 if ($newf) {
                     while (!feof($file)) {
                         fwrite($newf, fread($file, 1024 * 8), 1024 * 8);
                     }
                 }
-            }
-            if ($file) {
                 fclose($file);
-            }
-            if ($newf) {
-                fclose($newf);
+                if ($newf) {
+                    fclose($newf);
+                }
             }
         }
         return $path;
