@@ -17,12 +17,9 @@ class GoogleTimelineImportCommand extends SqsCommand
         $this
             ->setName('app:import-timeline')
             ->setDescription('Google Timeline JSON Import')
-            ->addOption('api-url', null, InputOption::VALUE_REQUIRED, 'Api to upload', 'https://api.mapmob.com/api/')
-            ->addOption('api-login', null, InputOption::VALUE_REQUIRED, 'Api login')
-            ->addOption('api-pass', null, InputOption::VALUE_REQUIRED, 'Api password')
-            ->addOption('target-user-id', null, InputOption::VALUE_OPTIONAL, 'Destination MapMob userId (if other than api-login)')
-            ->addOption('row-limit', null, InputOption::VALUE_OPTIONAL, 'number of lines to read')
-            ->addOption('batch-size', null, InputOption::VALUE_OPTIONAL, 'max batch size', 1000)
+            ->addOption('api-url', null, InputOption::VALUE_REQUIRED, 'MapMob Api to upload', 'https://api.mapmob.com/api/')
+            ->addOption('row-limit', null, InputOption::VALUE_OPTIONAL, 'Number of lines to read from Timeline.json')
+            ->addOption('batch-size', null, InputOption::VALUE_OPTIONAL, 'How many points submit at once', 1000)
         ;
     }
 
@@ -34,6 +31,11 @@ class GoogleTimelineImportCommand extends SqsCommand
         if (!isset($data['payload'])) {
             throw new \Exception($data, "Missing payload in JSON data");
         }
+        if (!isset($data['mapmobToken'])) {
+            throw new \Exception($data, "Missing mapmobToken in JSON data");
+        }
+        $this->client = $this->getClient($this->input->getOption('api-url'), $data['mapmobToken']);
+
         $payload = $data['payload'];
         if ($this->input->getOption('verbose')) {
             dump($data, $payload);
@@ -74,8 +76,6 @@ class GoogleTimelineImportCommand extends SqsCommand
 
     protected function processFile($sourceFile)
     {
-        $destUserId = $this->input->getOption('target-user-id') ?? $this->client->getLoggedUser()['id'];
-        $this->output->writeln('Destination userId: '.$destUserId);
         $batchSize = $this->input->getOption('batch-size');
         $limit = $this->input->getOption('row-limit');
         $count = 0;
@@ -85,14 +85,14 @@ class GoogleTimelineImportCommand extends SqsCommand
             }
             $count++;
             if ($count % $batchSize === 0) {
-                $this->flushQueue($destUserId);
+                $this->flushQueue();
             }
             if ($limit && $count >= $limit) {
                 $this->output->writeln('Limit reached');
                 break;
             }
         }
-        $this->flushQueue($destUserId);
+        $this->flushQueue();
         return ['records_count' => $count];
     }
 
@@ -188,17 +188,15 @@ class GoogleTimelineImportCommand extends SqsCommand
     }
 
 
-    /**
-     * @param string $userId
-     */
-    private function flushQueue($userId)
+    private function flushQueue()
     {
-        if (empty($userId) || empty($this->queue)) {
+        if (empty($this->queue)) {
             return;
         }
+        $deviceId = md5($this->client->getLoggedUser()['id']);
+        $data = $this->prepareData($this->queue, $deviceId);
         $this->output->writeln(sprintf('Submitting %d points to %s', count($this->queue), $this->client->getEndpoint()));
-        $data = $this->prepareData($this->queue, md5($userId));
-        $this->submitLocationData($this->client, $data, $userId);
+        $this->submitLocationData($this->client, $data);
         $this->queue = [];
     }
 
@@ -223,39 +221,37 @@ class GoogleTimelineImportCommand extends SqsCommand
 
     protected function initClient()
     {
-        $this->client = $this->getClient($this->input->getOption('api-url'), $this->input->getOption('api-login'), $this->input->getOption('api-pass'));
+        //void
     }
 
     /**
      * @param $apiUrl
-     * @param $username
-     * @param $pass
+     * @param $accessToken
      * @return bool|SurvosClient
      * @throws \Exception
      */
-    private function getClient($apiUrl, $username, $pass)
+    private function getClient($apiUrl, $accessToken)
     {
         $client = new SurvosClient($apiUrl);
-        if (!$client->authorize($username, $pass)) {
+        if (!$client->authByToken($accessToken)) {
             $this->output->writeln(sprintf('Response status: %d', $client->getLastResponseStatus()));
             $this->output->writeln(sprintf('Response data: %s', $client->getLastResponseData()));
-            throw new \Exception("Can't log in. ApiUrl: '{$apiUrl}', username: '{$username}'");
+            throw new \Exception("Can't log in. ApiUrl: '{$apiUrl}', token: '{$accessToken}'");
         }
-        $this->output->writeln(sprintf('Logged in under "%s"', $username));
+        $this->output->writeln(sprintf('Logged in under "%s"', $client->getLoggedUser()['username']));
         return $client;
     }
 
     /**
      * @param SurvosClient $client
      * @param array $data
-     * @param int|null $userId
      * @throws SurvosException
      */
-    private function submitLocationData($client, array $data, $userId = null)
+    private function submitLocationData($client, array $data)
     {
         $observeResource = new ObserveResource($client);
         try {
-            $response = $observeResource->postLocation($data, $userId);
+            $response = $observeResource->postLocation($data);
             $this->output->writeln(sprintf('Response: %s', json_encode($response)));
         } catch (SurvosException $e) {
             $this->output->writeln(sprintf('Response status: %d', $observeResource->getLastResponseStatus()));
