@@ -113,8 +113,9 @@ class GoogleTimelineImportCommand extends SqsCommand
         $limit = $this->input->getOption('row-limit');
         $count = 0;
         $dates = [];
+        $userId = $this->mapmobClient->getLoggedUser()['id'];
         foreach ($this->getItems($sourceFile) as $item) {
-            if (null !== $data = $this->normalizeItem($item)) {
+            if (null !== $data = $this->normalizeItem($item, $userId)) {
                 $this->addToQueue($data);
                 $date = date('Y-m-d', strtotime($data['timestamp']));
                 $dates[$date] = ($dates[$date] ?? 0) + 1;
@@ -171,9 +172,10 @@ class GoogleTimelineImportCommand extends SqsCommand
 
     /**
      * @param array $item
+     * @param int $userId
      * @return array|null
      */
-    private function normalizeItem(array &$item)
+    private function normalizeItem(array &$item, $userId)
     {
         if (empty($item['timestampMs']) || empty($item['latitudeE7']) || empty($item['longitudeE7'])) {
             return null;
@@ -182,7 +184,7 @@ class GoogleTimelineImportCommand extends SqsCommand
         return [
             'activity' => $this->getActivity($item) ?? ['type' => 'still', 'confidence' => 100],
             'battery' => ['is_charging' => false, 'level' => 1],
-            'uuid' => md5($item['timestampMs'].$item['latitudeE7'].$item['longitudeE7']),
+            'uuid' => md5($item['timestampMs'].$item['latitudeE7'].$item['longitudeE7'].$userId),
             'is_moving' => false,
             'timestamp' => date('c', round($item['timestampMs'] / 1000)),
             'coords' => [
