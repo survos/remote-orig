@@ -29,7 +29,7 @@ class GoogleTimelineImportCommand extends SqsCommand
     /** @var SurvosClient */
     private $mapmobClient;
 
-    protected function processMessage($data, $message)
+    protected function processMessage(array $data, array $message) : bool
     {
         $data = $this->validateMessage($data);
         $payload = (array)$data['payload'];
@@ -52,7 +52,7 @@ class GoogleTimelineImportCommand extends SqsCommand
     }
 
     /**
-     * @param object $data
+     * @param array $data
      * @return array
      */
     private function validateMessage($data)

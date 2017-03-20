@@ -31,7 +31,7 @@ class GoogleStaypointsImportCommand extends SqsCommand
     /** @var  string */
     private $staypointChannelEndpoint;
 
-    protected function processMessage($data, $message)
+    protected function processMessage(array $data, array $message) : bool
     {
         $data = $this->validateMessage($data);
         $payload = (array)$data['payload'];
@@ -59,7 +59,7 @@ class GoogleStaypointsImportCommand extends SqsCommand
 
 
     /**
-     * @param object $data
+     * @param array $data
      * @return array
      */
     private function validateMessage($data)

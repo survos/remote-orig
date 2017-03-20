@@ -30,8 +30,9 @@ class TraccarTracksCommand extends SqsCommand
         return 0; // OK
     }
 
-    protected function processMessage($inData, $message)
+    protected function processMessage(array $inData, array $message) : bool
     {
+        $inData = (object) $inData;
         if ($this->output->isVerbose()) {
             print json_encode($inData, JSON_PRETTY_PRINT) . "\n";
         }

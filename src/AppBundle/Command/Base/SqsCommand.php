@@ -7,6 +7,7 @@ use Aws\Result;
 use Aws\Sqs\SqsClient;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
+use Survos\Client\Resource\ObserveResource;
 use Survos\Client\SurvosClient;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -148,9 +149,9 @@ abstract class SqsCommand extends BaseCommand
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
                 try {
-                    $ok = $this->processMessage(json_decode($message['Body']), $message);
+                    $ok = $this->processMessage(json_decode($message['Body'], true), $message);
                 } catch (\Exception $e) {
-                    $this->output->writeln("Queue '{$queueName}': Error! {$e->getMessage()}");
+                    $this->output->writeln("Queue '{$queueName}': Error! {$e->getMessage()}\n" . $e->getTraceAsString());
                     $ok = $this->input->getOption('delete-bad');
                 }
                 if ($ok) {
@@ -166,11 +167,11 @@ abstract class SqsCommand extends BaseCommand
      * Process message. Return true if everything is OK, and message will be deleted from SQS in processQueue().
      * Return false if something goes wrong, and message will not be deleted.
      *
-     * @param object $data
+     * @param array $data
      * @param array $message
      * @return bool whether message was successfully processed
      */
-    abstract protected function processMessage($data, $message);
+    abstract protected function processMessage(array $data, array $message) : bool;
 
     /**
      * @param string $queueName
@@ -222,30 +223,24 @@ abstract class SqsCommand extends BaseCommand
 
     /**
      * send the answers back to /api1.0/channel/receive-data (api?  Or just regular?  do we need the project code?  security?)
-     * @param $taskId
+     *
+     * @param string $endpoint
+     * @param int $assignmentId
      * @param array $answers
      */
-    protected function sendAnswers($taskId, array $answers)
+    protected function sendAnswers(string $endpoint, int $assignmentId, array $answers)
     {
         $currentUserId = $this->survosClient->getLoggedUser()['id'];
         $data = [
             'answers' => $answers,
             'memberId' => $currentUserId,
-            'taskId' => $taskId,
-            'assignmentId' => '',
+            'assignmentId' => $assignmentId,
             'language' => 'en',
         ];
-
-
-        // this is letter the processing wave know the status, the individual staypoints have already been pushed to the appropriate channel
         $observeRes = new ObserveResource($this->survosClient);
-        // post to the channel rather than directly to saveResponses.
-        $response = $observeRes->postToUrl($this->staypointChannelEndpoint, [
-            'submittedData' => $data]);
-        dump($response, $data, $this->staypointChannelEndpoint);
-        // old way, save directly.
-        // $response = $observeRes->saveResponses($data);
-        $this->output->writeln("Submitted, status: {$response['status']}");
+        $response = $observeRes->postToUrl($endpoint, ['json' => $data]);
+        dump($response, $data, $endpoint);
+        $this->output->writeln('Submitted: ' . json_encode($response, JSON_PRETTY_PRINT));
     }
 
     /**
