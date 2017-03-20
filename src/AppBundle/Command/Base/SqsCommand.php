@@ -122,7 +122,7 @@ abstract class SqsCommand extends BaseCommand
         $options = [
             'QueueUrl' => $this->getQueueUrl($queueName),
             'MaxNumberOfMessages' => $this->input->getOption('limit'),
-            'WaitTimeSeconds' => 20,
+            'WaitTimeSeconds' => 3,
         ];
         $promise = $this->sqs->receiveMessageAsync($options);
         $promise->then(function (Result $result) use ($queueName) {
