@@ -138,6 +138,7 @@ class ExternalWeatherCommand extends SqsCommand
     private function processAssignment($assignment, $data)
     {
         $answers = [];
+        dump($assignment); die();
         $lat = isset($assignment['latitude']) ? floatval($assignment['latitude']) : false;
         $lon = isset($assignment['longitude']) ? floatval($assignment['longitude']) : false;
 
