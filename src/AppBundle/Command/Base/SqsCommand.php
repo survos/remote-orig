@@ -143,6 +143,7 @@ abstract class SqsCommand extends BaseCommand
         $processed = 0;
         if (isset($result['Messages'])) {
             foreach ($result['Messages'] as $message) {
+                dump($message); die();
                 try {
                     $ok = $this->processMessage(json_decode($message['Body']), $message);
                 } catch (\Exception $e) {

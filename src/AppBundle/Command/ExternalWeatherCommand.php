@@ -25,20 +25,10 @@ class ExternalWeatherCommand extends SqsCommand
     {
         parent::configure();
         $this
-            ->setName('demo:weather')
+            ->setName('app:weather')
             ->setDescription('Process a queue dedicated to weather')
-            ->setHelp("Reads from an SQS queue, looks up the weather, then pushes back to one")
-            ->addArgument(
-                'from-queue',
-                InputArgument::REQUIRED,
-                'From queue name'
-            )
-            ->addArgument(
-                'to-queue',
-                InputArgument::OPTIONAL,
-                'To queue name',
-                false
-            );
+            ->setHelp("Reads from an SQS queue, looks up the weather, then pushes back to channel")
+            ;
     }
 
     /**
@@ -47,11 +37,12 @@ class ExternalWeatherCommand extends SqsCommand
      * @throws \Exception
      * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function XXexecute(InputInterface $input, OutputInterface $output)
     {
         $this->services = [];
-        $this->fromQueueName = $input->getArgument('from-queue');
-        $this->toQueueName = $input->getArgument('to-queue');
+        $this->fromQueueName = $input->getArgument('queue-name');
+        $output->writeln("Reading from $this->fromQueueName", true);
+#        $this->toQueueName = $input->getArgument('to-queue');
         $this->processQueue($this->fromQueueName);
         return 0; // OK
     }
@@ -126,7 +117,7 @@ class ExternalWeatherCommand extends SqsCommand
         if (isset($this->services['weather'])) {
             $serviceData = $this->services['weather'];
         } else {
-
+            // api.openweathermap.org/data/2.5/weather?zip={zip code},{country code}
             $serviceData = json_decode(
                 file_get_contents(
                     "http://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&appid=0dde8683a8619233195ca7917465b29d"
