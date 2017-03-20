@@ -52,7 +52,8 @@ class GoogleStaypointsImportCommand extends SqsCommand
             dump($answers);
         }
         return false; // leave the message in the queue.
-        // this is sending the STATUS report of the staypoint upload -- NOT THE STAYPOINTS!  That happens in flushQueue()
+
+
         $this->sendAnswers($data['taskId'], $answers, $data[]);
 
         return true;
@@ -77,8 +78,12 @@ class GoogleStaypointsImportCommand extends SqsCommand
 
         // this is letter the processing wave know the status, the individual staypoints have already been pushed to the appropriate channel
         $observeRes = new ObserveResource($this->survosClient);
-        $response = $observeRes->saveResponses($data);
-        dump($response);
+        // post to the channel rather than directly to saveResponses.
+        $response = $observeRes->postToUrl($this->staypointChannelEndpoint, [
+            'submittedData' => $data]);
+        dump($response, $data, $this->staypointChannelEndpoint);
+        // old way, save directly.
+        // $response = $observeRes->saveResponses($data);
         $this->output->writeln("Submitted, status: {$response['status']}");
     }
 
@@ -147,12 +152,14 @@ class GoogleStaypointsImportCommand extends SqsCommand
             $it = $this->flattenArray($item->properties);
             // $data = $it; // todo: normalize
             if (null !== $data = $this->normalizeItem($it, 0)) { // where does member id come in?  $userId)) {
-                $this->addToQueue($data);
+                $staypoints[] = $data;
                 $count++;
             }
         }
-        $this->flushQueue();
+
+        // these are the $answers, and need to correspond to the survey questions.
         return [
+            'my_places' => $staypoints,
             'staypoint_count' => $count,
         ];
     }
@@ -188,38 +195,15 @@ class GoogleStaypointsImportCommand extends SqsCommand
     {
         return
             [
-                // taskId?  etc
-                'answers' => [
-            'my_place' => [ // type 'staypoint'
-                'latitude' => $item['Location_Latitude'] ?? $item['GeoCoordinates_Latitude'],
-                'longitude' => $item['Location_Longitude']  ?? $item['GeoCoordinates_Longitude'],
-                'name' => $item['Title'],
-            ],
-            'google_maps_url' => $item['GoogleMapsURL']
-        ]
-        ]
+                'my_place' => [ // type 'staypoint'
+                    'latitude' => $item['Location_Latitude'] ?? $item['GeoCoordinates_Latitude'],
+                    'longitude' => $item['Location_Longitude']  ?? $item['GeoCoordinates_Longitude'],
+                    'name' => $item['Title'],
+                ],
+                'google_maps_url' => $item['GoogleMapsURL']
+            ]
             ;
 
-
-        if (empty($item['timestampMs']) || empty($item['latitudeE7']) || empty($item['longitudeE7'])) {
-            return null;
-        }
-        $e7divider = pow(10, 7);
-        return [
-            'activity' => $this->getActivity($item) ?? ['type' => 'still', 'confidence' => 100],
-            'battery' => ['is_charging' => false, 'level' => 1],
-            'uuid' => md5($item['timestampMs'].$item['latitudeE7'].$item['longitudeE7'].$userId),
-            'is_moving' => false,
-            'timestamp' => date('c', round($item['timestampMs'] / 1000)),
-            'coords' => [
-                'latitude' => $item['latitudeE7'] / $e7divider,
-                'longitude' => $item['longitudeE7'] / $e7divider,
-                'accuracy' => $item['accuracy'] ?? 0,
-                'speed' => 0,
-                'heading' => $item['heading'] ?? 0,
-                'altitude' => $item['altitude'] ?? 0,
-            ]
-        ];
     }
 
 
@@ -231,11 +215,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
 
         $observeRes = new ObserveResource($this->survosClient);
         foreach ($this->queue as $data) {
-            $response = $observeRes->postToUrl($this->staypointChannelEndpoint, [
-                // do we want the task or assignment that prompted this, etc.?
-
-                'submittedData' => $data]);
-            dump($response, $data, $this->staypointChannelEndpoint);
         }
 
         $this->queue = [];

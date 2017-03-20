@@ -4,7 +4,6 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "23f8d24768831b052969abd9d877f921",
     "content-hash": "fc18f66bd211e9b948107d90e058930c",
     "packages": [
         {
@@ -85,7 +84,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2017-02-17 20:09:40"
+            "time": "2017-02-17T20:09:40+00:00"
         },
         {
             "name": "bcncommerce/json-stream",
@@ -133,7 +132,7 @@
                 "streaming",
                 "writer"
             ],
-            "time": "2014-04-27 23:53:40"
+            "time": "2014-04-27T23:53:40+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -337,7 +336,7 @@
                 "collections",
                 "iterator"
             ],
-            "time": "2017-01-03 10:49:41"
+            "time": "2017-01-03T10:49:41+00:00"
         },
         {
             "name": "doctrine/common",
@@ -651,7 +650,7 @@
                 "cache",
                 "caching"
             ],
-            "time": "2016-01-26 17:28:51"
+            "time": "2016-01-26T17:28:51+00:00"
         },
         {
             "name": "doctrine/inflector",
@@ -1079,7 +1078,7 @@
                 "stream",
                 "uri"
             ],
-            "time": "2016-06-24 23:00:38"
+            "time": "2016-06-24T23:00:38+00:00"
         },
         {
             "name": "incenteev/composer-parameter-handler",
@@ -1185,7 +1184,7 @@
                 "random-numbers",
                 "random-strings"
             ],
-            "time": "2016-09-07 15:52:06"
+            "time": "2016-09-07T15:52:06+00:00"
         },
         {
             "name": "ircmaxell/security-lib",
@@ -1231,7 +1230,7 @@
             ],
             "description": "A Base Security Library",
             "homepage": "https://github.com/ircmaxell/SecurityLib",
-            "time": "2015-03-20 14:31:23"
+            "time": "2015-03-20T14:31:23+00:00"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -1331,7 +1330,7 @@
                 "read",
                 "write"
             ],
-            "time": "2015-07-16 20:24:42"
+            "time": "2015-07-16T20:24:42+00:00"
         },
         {
             "name": "league/oauth2-client",
@@ -1394,7 +1393,7 @@
                 "oauth2",
                 "single sign on"
             ],
-            "time": "2016-07-28 13:20:43"
+            "time": "2016-07-28T13:20:43+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -1527,7 +1526,7 @@
                 "json",
                 "jsonpath"
             ],
-            "time": "2016-12-03 22:08:25"
+            "time": "2016-12-03T22:08:25+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -1575,7 +1574,7 @@
                 "pseudorandom",
                 "random"
             ],
-            "time": "2016-11-07 23:38:38"
+            "time": "2016-11-07T23:38:38+00:00"
         },
         {
             "name": "psr/cache",
@@ -1983,12 +1982,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/survos/platform-api-php.git",
-                "reference": "cf0f3c31d988b5276b07afaba14ca24e53bf442a"
+                "reference": "f06284d5b8972f41a8037e64cb72ee72747e39c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/cf0f3c31d988b5276b07afaba14ca24e53bf442a",
-                "reference": "cf0f3c31d988b5276b07afaba14ca24e53bf442a",
+                "url": "https://api.github.com/repos/survos/platform-api-php/zipball/f06284d5b8972f41a8037e64cb72ee72747e39c6",
+                "reference": "f06284d5b8972f41a8037e64cb72ee72747e39c6",
                 "shasum": ""
             },
             "require": {
@@ -2005,7 +2004,7 @@
                 "proprietary"
             ],
             "description": "Survos php api client",
-            "time": "2017-02-23 19:08:02"
+            "time": "2017-03-20 11:49:33"
         },
         {
             "name": "swiftmailer/swiftmailer",
