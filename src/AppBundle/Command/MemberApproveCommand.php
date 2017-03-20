@@ -33,7 +33,7 @@ class MemberApproveCommand extends SqsCommand
 
     protected function processMessage(array $inData, array $message) : bool
     {
-        $inData = (array) $inData;
+        $inData = (object) $inData;
         if ($this->output->isVerbose()) {
             print json_encode($inData, JSON_PRETTY_PRINT) . "\n";
         }
