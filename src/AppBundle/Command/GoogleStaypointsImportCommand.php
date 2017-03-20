@@ -27,8 +27,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
 
     /** @var SurvosClient */
     private $mapmobClient;
-    /** @var SurvosClient */
-    private $survosClient;
 
     /** @var  string */
     private $staypointChannelEndpoint;
@@ -59,33 +57,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
         return true;
     }
 
-    /**
-     * send the answers back to /api1.0/channel/receive-data (api?  Or just regular?  do we need the project code?  security?)
-     * @param $taskId
-     * @param array $answers
-     */
-    private function sendAnswers($taskId, array $answers)
-    {
-        $currentUserId = $this->survosClient->getLoggedUser()['id'];
-        $data = [
-            'answers' => $answers,
-            'memberId' => $currentUserId,
-            'taskId' => $taskId,
-            'assignmentId' => '',
-            'language' => 'en',
-        ];
-
-
-        // this is letter the processing wave know the status, the individual staypoints have already been pushed to the appropriate channel
-        $observeRes = new ObserveResource($this->survosClient);
-        // post to the channel rather than directly to saveResponses.
-        $response = $observeRes->postToUrl($this->staypointChannelEndpoint, [
-            'submittedData' => $data]);
-        dump($response, $data, $this->staypointChannelEndpoint);
-        // old way, save directly.
-        // $response = $observeRes->saveResponses($data);
-        $this->output->writeln("Submitted, status: {$response['status']}");
-    }
 
     /**
      * @param object $data
@@ -244,21 +215,4 @@ class GoogleStaypointsImportCommand extends SqsCommand
         //void
     }
 
-    /**
-     * @param $apiUrl
-     * @param $accessToken
-     * @return bool|SurvosClient
-     * @throws \Exception
-     */
-    private function getClient($apiUrl, $accessToken)
-    {
-        $client = new SurvosClient($apiUrl);
-        if (!$client->authByToken($accessToken)) {
-            $this->output->writeln(sprintf('Response status: %d', $client->getLastResponseStatus()));
-            $this->output->writeln(sprintf('Response data: %s', $client->getLastResponseData()));
-            throw new \Exception("Can't log in. ApiUrl: '{$apiUrl}', token: '{$accessToken}'");
-        }
-        $this->output->writeln(sprintf('Logged in under "%s" against "%s"', $client->getLoggedUser()['username'], $apiUrl));
-        return $client;
-    }
 }

@@ -50,6 +50,16 @@ class ExternalWeatherCommand extends SqsCommand
     protected function processMessage($data, $message)
     {
         $data = (array) $data;
+        // $data = $this->validateMessage($data);
+        $payload = (array)$data['payload'];
+        if ($this->input->getOption('verbose')) {
+            dump($data, $payload);
+        }
+
+        // lots of duplicated logic
+        $this->survosClient = $this->getClient($data['apiUrl'], $data['accessToken']);
+
+
         try {
             if (!isset($data['assignment'])) {
                 throw new AssignmentNotFound($data, "Missing assignment in JSON data");
@@ -65,27 +75,9 @@ class ExternalWeatherCommand extends SqsCommand
                 dump($answers);
             }
 
+
             if ($answers) {
-                $id = $assignment['id'];
-                if ($this->output->isVerbose()) {
-                    $this->output->writeln("Updating $id");
-                    dump($answers);
-                }
-                $commandMessage = [
-                    'command'   => 'appendAnswers',
-                    'arguments' => [
-                        'assignment_id' => $id,
-                        'answers'       => $answers,
-                    ],
-                ];
-                if ($this->toQueueName) {
-                    $this->queue($this->toQueueName, $commandMessage);
-                    $this->output->writeln("Deleting $id");
-                } else {
-                    dump($commandMessage);
-                    $this->output->writeln("No output queue specified");
-                }
-                //all good, remove from the queue
+                $this->sendAnswers($assignment, $answers);
                 $this->deleteMessage($this->fromQueueName, $message);
             }
         } catch (\Exception $e) {
