@@ -42,19 +42,17 @@ class GoogleStaypointsImportCommand extends SqsCommand
         $this->survosClient = $this->getClient($data['apiUrl'], $data['accessToken']);
         $this->staypointChannelEndpoint = $data['receiveEndpoint'];
 
-        $localPath = $this->downloadFile($payload['timeline_filename']);
+        $localPath = $this->downloadFile($data['parameters']['imageUrl']);
         $answersResolver = new OptionsResolver();
         $answersResolver->setDefaults($payload);
         $answers = $answersResolver->resolve($this->processFile($localPath));
         if ($this->input->getOption('verbose')) {
             dump($answers);
         }
-        return false; // leave the message in the queue.
 
+        $this->sendData($data['channelCode'], $answers, $data['taskId'], $data['assignmentId']);
 
-        $this->sendAnswers($data['taskId'], $answers, $data[]);
-
-        return true;
+        return true; // use --delete-bad to leave the message in the queue.
     }
 
 
@@ -66,7 +64,7 @@ class GoogleStaypointsImportCommand extends SqsCommand
     {
         $resolver = new OptionsResolver();
         $resolver->setDefined(['action', 'deployment', 'parameters']);
-        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId', 'statusEndpoint', 'receiveEndpoint', 'receiveMethod']);
+        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId', 'assignmentId', 'statusEndpoint', 'receiveEndpoint', 'receiveMethod', 'channelCode']);
         return $resolver->resolve((array) $data);
     }
 

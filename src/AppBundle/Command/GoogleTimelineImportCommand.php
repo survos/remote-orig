@@ -39,14 +39,14 @@ class GoogleTimelineImportCommand extends SqsCommand
         $this->mapmobClient = $this->getClient($this->input->getOption('api-url'), $data['mapmobToken']);
         $this->survosClient = $this->getClient($data['apiUrl'], $data['accessToken']);
 
-        $localPath = $this->downloadFile($payload['timeline_filename']);
+        $localPath = $this->downloadFile($data['parameters']['imageUrl']);
         $answersResolver = new OptionsResolver();
         $answersResolver->setDefaults($payload);
         $answers = $answersResolver->resolve($this->processFile($localPath));
         if ($this->input->getOption('verbose')) {
             dump($answers);
         }
-        $this->sendAnswers($data['taskId'], $answers);
+        $this->sendData($data['channelCode'], $answers, $data['taskId'], $data['assignmentId']);
 
         return true;
     }
@@ -59,7 +59,7 @@ class GoogleTimelineImportCommand extends SqsCommand
     {
         $resolver = new OptionsResolver();
         $resolver->setDefined(['action', 'deployment', 'parameters']);
-        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId']);
+        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId', 'assignmentId', 'statusEndpoint', 'receiveEndpoint', 'receiveMethod', 'channelCode']);
         return $resolver->resolve((array) $data);
     }
 
