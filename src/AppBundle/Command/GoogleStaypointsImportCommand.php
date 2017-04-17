@@ -28,9 +28,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
     /** @var SurvosClient */
     private $mapmobClient;
 
-    /** @var  string */
-    private $staypointChannelEndpoint;
-
     protected function processMessage(array $data, array $message) : bool
     {
         $data = $this->validateMessage($data);
@@ -40,7 +37,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
         }
 
         $this->survosClient = $this->getClient($data['apiUrl'], $data['accessToken']);
-        $this->staypointChannelEndpoint = $data['receiveEndpoint'];
 
         $localPath = $this->downloadFile($data['parameters']['imageUrl']);
         $answersResolver = new OptionsResolver();
@@ -53,19 +49,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
         $this->sendData($data['channelCode'], $answers, $data['taskId'], $data['assignmentId']);
 
         return true; // use --delete-bad to leave the message in the queue.
-    }
-
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    private function validateMessage($data)
-    {
-        $resolver = new OptionsResolver();
-        $resolver->setDefined(['action', 'deployment', 'parameters']);
-        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId', 'assignmentId', 'statusEndpoint', 'receiveEndpoint', 'receiveMethod', 'channelCode']);
-        return $resolver->resolve((array) $data);
     }
 
     private function downloadFile($url)

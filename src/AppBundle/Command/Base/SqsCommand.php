@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 abstract class SqsCommand extends BaseCommand
 {
@@ -244,6 +245,23 @@ abstract class SqsCommand extends BaseCommand
         $this->output->writeln('Submitted: ' . json_encode($response, JSON_PRETTY_PRINT));
         return $response;
     }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    protected function validateMessage($data)
+    {
+        $resolver = new OptionsResolver();
+        $resolver->setDefined([
+            'action', 'deployment', 'parameters',
+            //TODO: we don't use these params
+            'statusEndpoint', 'receiveEndpoint', 'receiveMethod',
+        ]);
+        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId', 'assignmentId', 'channelCode']);
+        return $resolver->resolve((array) $data);
+    }
+
 
     /**
      * @param $apiUrl

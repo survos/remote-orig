@@ -5,6 +5,7 @@ namespace AppBundle\Command;
 use AppBundle\Command\Base\SqsCommand;
 use AppBundle\Exception\AssignmentExceptionInterface;
 use AppBundle\Exception\PosseExceptionInterface;
+use Survos\Client\SurvosClient;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -49,23 +50,19 @@ class ExternalWeatherCommand extends SqsCommand
 
     protected function processMessage(array $data, array $message) : bool
     {
-        $data = $this->validateData($data);
+        $data = $this->validateMessage($data);
         $payload = $data['payload'];
         if ($this->input->getOption('verbose')) {
             dump($data, $payload);
         }
-        $channelEndpoint = $data['channelEndpoint'];
-        // @todo Using API login here doesn't really make sense, does it?
-        $parts = parse_url($channelEndpoint);
-        $loginEndpoint = $parts['scheme'] . '://' . $parts['host'] . '/api1.0/';
-        $this->survosClient = $this->getClient($loginEndpoint, $data['accessToken']);
+        $this->survosClient = $this->getClient($data['apiUrl'], $data['accessToken']);
         try {
             $answers = $this->processAssignment($data);
             if ($this->input->getOption('verbose')) {
                 dump($answers);
             }
             if ($answers) {
-                $this->sendAnswers($data['channelEndpoint'], $data['assignmentId'], $answers);
+                $this->sendData($data['channelCode'], $answers, $data['taskId'], $data['assignmentId']);
             }
         } catch (\Exception $e) {
             if ($e instanceof AssignmentExceptionInterface) {
@@ -88,30 +85,6 @@ class ExternalWeatherCommand extends SqsCommand
         }
 
         return true; // message is handled and can be deleted
-    }
-
-    /**
-     * @param $data
-     * @return array
-     */
-    private function validateData($data)
-    {
-        return (new OptionsResolver())
-            ->setDefaults([
-                'action' => null, // needed?
-                'taskId' => null, // needed?
-                'accessToken' => null,
-                'parameters' => [], // needed?
-                'receiveMethod' => 'POST',
-                'payload' => [],
-                'assignmentId' => null, // why does a required option need a default?
-                'channelEndpoint' => null, // why does a required option need a default?
-            ])
-            ->setAllowedTypes('assignmentId', 'int')
-            ->setAllowedTypes('channelEndpoint', 'string')
-            ->setAllowedTypes('payload', 'array')
-            ->setRequired(['assignmentId', 'channelEndpoint'])
-            ->resolve($data);
     }
 
     /**

@@ -51,18 +51,6 @@ class GoogleTimelineImportCommand extends SqsCommand
         return true;
     }
 
-    /**
-     * @param array $data
-     * @return array
-     */
-    private function validateMessage($data)
-    {
-        $resolver = new OptionsResolver();
-        $resolver->setDefined(['action', 'deployment', 'parameters']);
-        $resolver->setRequired(['payload', 'mapmobToken', 'apiUrl', 'accessToken', 'taskId', 'assignmentId', 'statusEndpoint', 'receiveEndpoint', 'receiveMethod', 'channelCode']);
-        return $resolver->resolve((array) $data);
-    }
-
     private function downloadFile($url)
     {
         $path = sys_get_temp_dir() . '/' . md5($url). '.zip';
@@ -113,15 +101,6 @@ class GoogleTimelineImportCommand extends SqsCommand
             'day_count' => count($dates),
         ];
     }
-
-    /*
-     * Uncomment for local testing
-     * `sf app:import-timeline <queue_name> --api-login <login> --api-pass <pass>`
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        $data = json_decode('{"url": "http://gis.l.survos.com/uploads/gis/123329ae8d85758a8f1a6eb68711a144.zip", "records_count": null}');
-        $this->processMessage($data, null);
-    }*/
 
     /**
      * @param $filename
