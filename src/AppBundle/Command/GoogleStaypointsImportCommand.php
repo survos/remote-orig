@@ -95,7 +95,7 @@ class GoogleStaypointsImportCommand extends SqsCommand
         $staypoints = [];
         foreach ($items->features as $item) {
             $it = $this->flattenArray($item->properties);
-            if (null !== $data = $this->normalizeItem($it, 0)) { // where does member id come in?  $userId)) {
+            if (null !== $data = $this->normalizeItem($it)) { // where does member id come in?  $userId)) {
                 $staypoints[] = $data;
                 $count++;
             }
@@ -129,25 +129,18 @@ class GoogleStaypointsImportCommand extends SqsCommand
         $answers = $answersResolver->resolve($this->processFile($localPath));
     }
 
-
     /**
      * @param array $item
-     * @param int $userId
-     * @return array|null
+     * @return array
      */
-    private function normalizeItem(array &$item, $userId)
+    private function normalizeItem(array $item) : array
     {
-        return
-            [
-                'my_place' => [ // type 'staypoint'
-                    'latitude' => $item['Location_Latitude'] ?? $item['GeoCoordinates_Latitude'],
-                    'longitude' => $item['Location_Longitude']  ?? $item['GeoCoordinates_Longitude'],
-                    'name' => $item['Title'],
-                ],
-                'google_maps_url' => $item['GoogleMapsURL']
-            ]
-            ;
-
+        return [
+            'latitude' => $item['Location_Latitude'] ?? $item['GeoCoordinates_Latitude'],
+            'longitude' => $item['Location_Longitude'] ?? $item['GeoCoordinates_Longitude'],
+            'name' => $item['Title'],
+            'google_maps_url' => $item['GoogleMapsURL']
+        ];
     }
 
 
