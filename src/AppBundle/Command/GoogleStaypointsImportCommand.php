@@ -2,12 +2,8 @@
 namespace AppBundle\Command;
 
 use AppBundle\Command\Base\SqsCommand;
-use Bcn\Component\Json\Reader;
 use Survos\Client\Resource\ObserveResource;
-use Survos\Client\SurvosClient;
-use Survos\Client\SurvosException;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -24,9 +20,6 @@ class GoogleStaypointsImportCommand extends SqsCommand
     }
 
     private $queue = [];
-
-    /** @var SurvosClient */
-    private $mapmobClient;
 
     protected function processMessage(array $data, array $message) : bool
     {
@@ -99,10 +92,9 @@ class GoogleStaypointsImportCommand extends SqsCommand
         $zippedFn = "zip://{$filename}#Takeout/Maps (your places)/Saved Places.json";
         $items = json_decode(file_get_contents($zippedFn)); //
         $count = 0;
-        foreach ($items->features as $item)
-        {
+        $staypoints = [];
+        foreach ($items->features as $item) {
             $it = $this->flattenArray($item->properties);
-            // $data = $it; // todo: normalize
             if (null !== $data = $this->normalizeItem($it, 0)) { // where does member id come in?  $userId)) {
                 $staypoints[] = $data;
                 $count++;
@@ -111,8 +103,8 @@ class GoogleStaypointsImportCommand extends SqsCommand
 
         // these are the $answers, and need to correspond to the survey questions.
         return [
-            'my_places' => $staypoints,
-            'staypoint_count' => $count,
+            'my_places_count' => $count,
+            'google_staypoint' => $staypoints,
         ];
     }
 
