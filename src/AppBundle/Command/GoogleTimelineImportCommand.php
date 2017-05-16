@@ -213,6 +213,7 @@ class GoogleTimelineImportCommand extends SqsCommand
         $device = new \stdClass();
         $device->uuid = $uuid;
         $output = ['device' => $device, 'location' => []];
+        $output['app'] = ['name' => 'Timeline'];
         $output['location'] = $locations;
         return $output;
     }
