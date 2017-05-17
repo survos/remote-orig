@@ -42,7 +42,12 @@ class GoogleTimelineImportCommand extends SqsCommand
         $localPath = $this->downloadFile($data['parameters']['imageUrl']);
         $answersResolver = new OptionsResolver();
         $answersResolver->setDefaults($payload);
-        $answers = $answersResolver->resolve($this->processFile($localPath));
+        try {
+            $answers = $answersResolver->resolve($this->processFile($localPath));
+        } catch (\Throwable $e) {
+            $this->output->writeln('unable to process file: '. $e->getMessage());
+            return true;
+        }
         if ($this->input->getOption('verbose')) {
             dump($answers);
         }
