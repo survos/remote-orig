@@ -224,20 +224,32 @@ abstract class SqsCommand extends BaseCommand
 
     /**
      * send the answers back to using ChannelResource::sendData
-     *
-     * @param string $channelCode
-     * @param array $answers
-     * @param int $taskId
-     * @param int $assignmentId
-     * @return array
      */
-    protected function sendData(string $channelCode, array $answers, $taskId, $assignmentId)
+    protected function sendData(string $channelCode, array $answers, int $taskId, ?int $assignmentId): array
     {
         dump(__METHOD__, $answers);
         $currentUserId = $this->survosClient->getLoggedUser()['id'];
         $res = new ChannelResource($this->survosClient);
         $response = $res->sendData($channelCode, [
             'answers' => $answers,
+            'memberId' => $currentUserId,
+            'taskId' => $taskId,
+            'assignmentId' => $assignmentId,
+        ]);
+        $this->output->writeln('Submitted: ' . json_encode($response, JSON_PRETTY_PRINT));
+        return $response;
+    }
+
+    /**
+     * send error to ChannelResource::sendData
+     */
+    protected function sendError(string $channelCode, string $error, int $taskId, ?int $assignmentId): array
+    {
+        dump(__METHOD__, $error);
+        $currentUserId = $this->survosClient->getLoggedUser()['id'];
+        $res = new ChannelResource($this->survosClient);
+        $response = $res->sendData($channelCode, [
+            'error' => $error,
             'memberId' => $currentUserId,
             'taskId' => $taskId,
             'assignmentId' => $assignmentId,

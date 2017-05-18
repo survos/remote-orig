@@ -45,6 +45,8 @@ class GoogleTimelineImportCommand extends SqsCommand
         try {
             $answers = $answersResolver->resolve($this->processFile($localPath));
         } catch (\Throwable $e) {
+            $errorMessage = 'Uploaded file is invalid';
+            $this->sendError($data['channelCode'], $errorMessage, $data['taskId'], $data['assignmentId']);
             $this->output->writeln('unable to process file: '. $e->getMessage());
             return true;
         }
